@@ -1,23 +1,22 @@
 import { signInWithPopup } from "firebase/auth";
-import { auth, provider } from "../firebaseConfig";
+import { auth, provider } from "../../firebaseConfig";
 
 export default function Login({ onLogin }) {
   const handleLogin = async () => {
     try {
+      // ✅ Prevent re-click while popup is open
       const result = await signInWithPopup(auth, provider);
-      onLogin(result.user);
-    } catch (e) {
-      console.error("Login failed", e);
+      const user = result.user;
+      onLogin(user); // update parent component state
+    } catch (error) {
+      console.error("Google login failed:", error);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <h2 className="text-2xl mb-4">Welcome to Delivery App</h2>
-      <button
-        onClick={handleLogin}
-        className="bg-blue-500 text-white px-4 py-2 rounded-lg"
-      >
+  <div className="login-container">
+      <h2>Welcome to Delivery App</h2>
+      <button className="login-button" onClick={handleLogin}>
         Sign in with Google
       </button>
     </div>
