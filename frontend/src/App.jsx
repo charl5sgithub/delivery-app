@@ -1,37 +1,47 @@
 import { useState } from "react";
 import Login from "./components/Login";
-import LandingPage from "./components/LandingPage";
 import Cart from "./components/Cart";
+import PaymentPage from "./components/PaymentPage";
+import LandingPage from "./components/Landingpage";
 import "./App.css";
 
 function App() {
   const [user, setUser] = useState(null);
   const [cart, setCart] = useState([]);
-  const [showCart, setShowCart] = useState(false);
+  const [page, setPage] = useState("shop");
 
-  const handleAddToCart = (item) => {
-    setCart([...cart, item]);
-  };
-
-  const handleCheckout = () => {
-    alert("Proceeding to Payment Page (Coming Soon)");
+  const handleAddToCart = (item) => setCart([...cart, item]);
+  const handleCheckout = () => setPage("payment");
+  const handlePaymentSuccess = () => {
+    alert("🎉 Payment completed successfully!");
+    setCart([]);
+    setPage("shop");
   };
 
   if (!user) return <Login onLogin={setUser} />;
 
+  const total = cart.reduce((sum, item) => sum + item.price, 0);
+
   return (
     <div className="app-container">
-      <header className="app-header">
-        <h1>Welcome, {user.displayName}</h1>
-        <button className="cart-toggle" onClick={() => setShowCart(!showCart)}>
-          {showCart ? "Back to Shop" : `View Cart (${cart.length})`}
-        </button>
-      </header>
+      {page === "shop" && (
+        <>
+          <header className="app-header">
+            <h1>Welcome, {user.displayName}</h1>
+            <button onClick={() => setPage("cart")}>
+              View Cart ({cart.length})
+            </button>
+          </header>
+          <LandingPage onAddToCart={handleAddToCart} />
+        </>
+      )}
 
-      {showCart ? (
+      {page === "cart" && (
         <Cart cart={cart} onCheckout={handleCheckout} />
-      ) : (
-        <LandingPage onAddToCart={handleAddToCart} />
+      )}
+
+      {page === "payment" && (
+        <PaymentPage total={total} onPaymentSuccess={handlePaymentSuccess} />
       )}
     </div>
   );
