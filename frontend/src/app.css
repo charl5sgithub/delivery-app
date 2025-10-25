@@ -137,3 +137,47 @@
 .cart-toggle:hover {
   background-color: #e6e6e6;
 }
+
+/* Payments CSS */
+.payment-container {
+  text-align: center;
+  padding: 2rem;
+  background-color: #f8fafc;
+  min-height: 80vh;
+}
+
+.checkout-form {
+  margin-top: 1.5rem;
+  display: inline-block;
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card-element {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  width: 300px;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.7rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.payment-message {
+  margin-top: 1rem;
+  font-weight: bold;
+}
