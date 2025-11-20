@@ -1,13 +1,22 @@
-import React from "react";
+import React , {useState, useEffect} from "react";
+import { getItems } from "../services/api";
 
-const items = [
-  { id: 1, name: "Rice", price: 50, image: "/images/rice.jpg" },
-  { id: 2, name: "Flour", price: 40, image: "/images/flour.jpg" },
-  { id: 3, name: "Masala", price: 30, image: "/images/masala.jpg" },
-  { id: 4, name: "Noodles", price: 25, image: "/images/noodles.jpg" },
-];
+// const items = [
+//   { id: 1, name: "Rice", price: 50, image: "/images/rice.jpg" },
+//   { id: 2, name: "Flour", price: 40, image: "/images/flour.jpg" },
+//   { id: 3, name: "Masala", price: 30, image: "/images/masala.jpg" },
+//   { id: 4, name: "Noodles", price: 25, image: "/images/noodles.jpg" },
+// ];
 
 export default function LandingPage({ onAddToCart }) {
+// console.log("API URL:", import.meta.env.VITE_API_URL);
+
+  const [items, setItems] = useState([]);
+
+  useEffect(() => {
+    getItems().then(data => setItems(data));
+  }, []);
+
   return (
     <div className="landing-container">
       <h2 className="landing-title">🛍️ Shop Grocery Essentials</h2>

@@ -1,20 +1,21 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-import { supabase } from "./services/supabase.js";
-import { stripe } from "./services/stripe.js";
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import itemsRouter from './routes/items.js';
+import ordersRouter from './routes/orders.js';
+import paymentsRouter from './routes/payments.js';
 
 dotenv.config();
 const app = express();
-app.use(cors());
+
+app.use(cors({
+  origin: "http://localhost:5173"  // frontend URL
+}));
 app.use(express.json());
 
-// Sample endpoint
-app.get("/api/products", async (req, res) => {
-  const { data, error } = await supabase.from("products").select("*");
-  if (error) return res.status(500).json({ error });
-  res.json(data);
-});
+app.use('/api/items', itemsRouter);
+app.use('/api/orders', ordersRouter);
+app.use('/api/payments', paymentsRouter);
 
-app.get("/", (_, res) => res.send("Backend running 🚀"));
-app.listen(8080, () => console.log("Server on http://localhost:8080"));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
