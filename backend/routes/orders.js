@@ -3,13 +3,105 @@ import { supabase } from "../db/supabaseClient.js";
 
 const router = express.Router();
 
-router.post("/", async (req, res) => {
-  const { userId, items, total } = req.body;
-  const { data, error } = await supabase
-    .from("orders")
-    .insert([{ userId, items, total, status: "pending" }]);
-  if (error) return res.status(400).json({ error: error.message });
-  res.json(data);
+// Checkout endpoint - Create Customer -> Address -> Order -> Payment
+// Checkout endpoint - Create Customer -> Address -> Order -> Order Items -> Payment
+router.post("/checkout", async (req, res) => {
+  const { name, email, phone, address, items, total } = req.body;
+
+  try {
+    // 1. Create or Find Customer
+    // Upsert to avoid duplicates
+    const { data: customer, error: custError } = await supabase
+      .from("customers")
+      .upsert([{ name, email, phone }], { onConflict: 'email' })
+      .select("customer_id")
+      .single();
+
+    if (custError) throw new Error(`Customer Error: ${custError.message}`);
+
+    // 2. Create Address
+    const { data: addr, error: addrError } = await supabase
+      .from("addresses")
+      .insert([{
+        customer_id: customer.customer_id,
+        address_line1: address,
+        city: "Unknown",
+        country: "India"
+      }])
+      .select("address_id")
+      .single();
+
+    if (addrError) throw new Error(`Address Error: ${addrError.message}`);
+
+    // 3. Create Order
+    const { data: order, error: orderError } = await supabase
+      .from("orders")
+      .insert([{
+        customer_id: customer.customer_id,
+        address_id: addr.address_id,
+        total_amount: total,
+        order_status: "PAID"
+      }])
+      .select("order_id")
+      .single();
+
+    if (orderError) throw new Error(`Order Error: ${orderError.message}`);
+
+    // 4. Insert Order Items
+    const orderItemsData = items.map(item => ({
+      order_id: order.order_id,
+      item_id: item.id,
+      quantity: item.quantity,
+      price: item.price
+    }));
+
+    const { error: itemsError } = await supabase
+      .from("order_items")
+      .insert(orderItemsData);
+
+    if (itemsError) throw new Error(`Order Items Error: ${itemsError.message}`);
+
+    // 5. Create Payment Record
+    const { error: payError } = await supabase
+      .from("payments")
+      .insert([{
+        order_id: order.order_id,
+        amount: total,
+        status: "success",
+        payment_method: "card",
+        transaction_id: `sim_${Date.now()}`
+      }]);
+
+    if (payError) throw new Error(`Payment Error: ${payError.message}`);
+
+    res.json({ success: true, orderId: order.order_id, message: "Order placed successfully!" });
+
+  } catch (error) {
+    console.error("Checkout Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Simple list orders (optional)
+// List all orders with customer and address details
+router.get("/", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("orders")
+      // JOIN items, need to match foreign key names in Supabase. 
+      // Assuming foreign keys are correctly set up as customer_id -> customers.id
+      .select(`
+        *,
+        customers (*),
+        addresses (*)
+      `)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 export default router;
