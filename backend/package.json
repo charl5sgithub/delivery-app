@@ -1,9 +1,11 @@
 {
   "name": "delivery-backend",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "dev": "node server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "seed": "node scripts/seedFishItems.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.81.1",
