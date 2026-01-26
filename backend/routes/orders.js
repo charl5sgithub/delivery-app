@@ -1,5 +1,6 @@
 import express from "express";
 import { supabase } from "../db/supabaseClient.js";
+import { getOrders, getOrderDetails, exportOrders, updateOrderStatus } from "../controllers/orderController.js";
 
 const router = express.Router();
 
@@ -82,26 +83,16 @@ router.post("/checkout", async (req, res) => {
   }
 });
 
-// Simple list orders (optional)
-// List all orders with customer and address details
-router.get("/", async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from("orders")
-      // JOIN items, need to match foreign key names in Supabase. 
-      // Assuming foreign keys are correctly set up as customer_id -> customers.id
-      .select(`
-        *,
-        customers (*),
-        addresses (*)
-      `)
-      .order("created_at", { ascending: false });
+// List orders with pagination, sort, search
+router.get("/", getOrders);
 
-    if (error) throw error;
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// Export orders to CSV
+router.get("/export", exportOrders);
+
+// Get order details
+router.get("/:id", getOrderDetails);
+
+// Update order status
+router.patch("/:id/status", updateOrderStatus);
 
 export default router;
