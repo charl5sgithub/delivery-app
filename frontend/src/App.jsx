@@ -11,6 +11,7 @@ import "./App.css";
 import AdminLayout from "./components/AdminLayout";
 import AdminOrders from "./admin/AdminOrders";
 import AdminCustomers from "./admin/AdminCustomers";
+import AdminDeliveryMap from "./admin/AdminDeliveryMap";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -116,6 +117,7 @@ function App() {
         <Route path="/admin" element={<AdminLayout user={user} />}>
           <Route path="orders" element={<AdminOrders />} />
           <Route path="customers" element={<AdminCustomers />} />
+          <Route path="delivery" element={<AdminDeliveryMap />} />
           <Route index element={<Navigate to="orders" />} />
         </Route>
 

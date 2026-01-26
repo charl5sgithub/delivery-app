@@ -1,21 +1,16 @@
 import express from "express";
 import { supabase } from "../db/supabaseClient.js";
+import { getCustomers, getCustomerDetails, exportCustomers } from "../controllers/customerController.js";
 
 const router = express.Router();
 
-router.get("/", async (req, res) => {
-    try {
-        const { data, error } = await supabase
-            .from("customers")
-            .select("*")
-            .order("created_at", { ascending: false });
+// List customers with pagination, sort, search
+router.get("/", getCustomers);
 
-        if (error) throw error;
+// Export customers to CSV
+router.get("/export", exportCustomers);
 
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+// Get customer details
+router.get("/:id", getCustomerDetails);
 
 export default router;

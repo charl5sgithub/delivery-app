@@ -12,6 +12,7 @@ export default function Sidebar({ onLogout }) {
             <ul className="sidebar-menu">
                 <li onClick={() => navigate('/admin/orders')}>Orders</li>
                 <li onClick={() => navigate('/admin/customers')}>Customers</li>
+                <li onClick={() => navigate('/admin/delivery')}>Delivery Tracking</li>
                 <li onClick={() => navigate('/')}>Store Front</li>
                 <li onClick={onLogout} className="logout-item">Logout</li>
             </ul>
