@@ -51,7 +51,7 @@ export const getDeliveryRoute = async (req, res) => {
                 orderQuery = orderQuery.in('order_id', idList);
             }
         } else {
-            // Default: Only orders in 'DELIVERING' or 'PAID' status
+            // Default: Only orders that still need delivery (DELIVERED and COMPLETED are excluded)
             orderQuery = orderQuery.in('order_status', ['DELIVERING', 'PAID', 'SHIPPED']);
         }
 

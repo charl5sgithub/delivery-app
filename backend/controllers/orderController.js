@@ -4,7 +4,7 @@ import { Parser } from 'json2csv';
 
 export const getOrders = async (req, res) => {
     try {
-        const { page = 1, limit = 10, sortBy = "created_at", sortOrder = "desc", search = "" } = req.query;
+        const { page = 1, limit = 10, sortBy = "created_at", sortOrder = "desc", search = "", startDate, endDate, orderId, status } = req.query;
 
         const from = (page - 1) * limit;
         const to = from + limit - 1;
@@ -17,13 +17,44 @@ export const getOrders = async (req, res) => {
         addresses (*)
       `, { count: "exact" });
 
-        // Search functionality
+        // Search functionality (Customer Name/Email)
         if (search) {
-            query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`, { foreignTable: 'customers' });
+            // Use the referenced table filter syntax for inner-joined customers
+            query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`, { referencedTable: 'customers' });
+        }
+
+        // Filter by Order ID (bigint)
+        if (orderId) {
+            const trimmed = orderId.trim();
+            const numericId = parseInt(trimmed, 10);
+            if (!isNaN(numericId) && String(numericId) === trimmed) {
+                // Exact numeric match
+                query = query.eq('order_id', numericId);
+            } else if (!isNaN(numericId)) {
+                // Partial numeric input - try exact match with the parsed number
+                query = query.eq('order_id', numericId);
+            }
+            // If not a number at all, we skip the filter (no results would match a bigint column)
+        }
+
+        // Filter by Status
+        if (status) {
+            query = query.eq('order_status', status);
+        }
+
+        // Filter by Date Range
+        if (startDate) {
+            query = query.gte('created_at', startDate);
+        }
+        if (endDate) {
+            // Ensure we cover the full day of endDate
+            // Append end of day time if it's just YYYY-MM-DD
+            const endDateTime = endDate.includes('T') ? endDate : `${endDate} 23:59:59.999`;
+            query = query.lte('created_at', endDateTime);
         }
 
         // Sort
-        if (['created_at', 'total_amount', 'status', 'order_status'].includes(sortBy)) {
+        if (['order_id', 'created_at', 'total_amount', 'status', 'order_status'].includes(sortBy)) {
             query = query.order(sortBy, { ascending: sortOrder === 'asc' });
         }
         else {
@@ -111,7 +142,7 @@ export const exportOrders = async (req, res) => {
             `);
 
         if (search) {
-            query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`, { foreignTable: 'customers' });
+            query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`, { referencedTable: 'customers' });
         }
 
         query = query.order("created_at", { ascending: false });
