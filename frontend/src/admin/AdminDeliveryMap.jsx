@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
@@ -59,7 +60,15 @@ export default function AdminDeliveryMap() {
     const [driverPos, setDriverPos] = useState(null);
     const [simulating, setSimulating] = useState(false);
     const [progress, setProgress] = useState(0);
+
     const location = useLocation();
+    const navigate = useNavigate();
+
+    // Modal State
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [detailsLoading, setDetailsLoading] = useState(false);
+    const [dialogConfig, setDialogConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: () => { } });
 
     const fetchRoute = useCallback(async () => {
         try {
@@ -142,6 +151,103 @@ export default function AdminDeliveryMap() {
     ] : [];
 
     const isBatchMode = new URLSearchParams(location.search).has('orderIds');
+
+    const handleDeleteStep = (e, orderId) => {
+        e.stopPropagation();
+
+        setDialogConfig({
+            isOpen: true,
+            title: "Remove Order",
+            message: "Are you sure you want to remove this order from the route?",
+            isAlert: false,
+            onConfirm: () => {
+                setDialogConfig(prev => ({ ...prev, isOpen: false }));
+
+                // Calculate new list of IDs
+                const currentIds = routeData.route.map(r => r.order_id);
+                const newIds = currentIds.filter(id => id !== orderId);
+
+                if (newIds.length === 0) {
+                    // Show error dialog after a short delay to allow the first dialog to close smoothly ?? 
+                    // Or just update the config. React state updates are batched so setting it again works.
+                    setTimeout(() => {
+                        setDialogConfig({
+                            isOpen: true,
+                            title: "Cannot Remove",
+                            message: "Cannot remove the last order. The route must have at least one stop.",
+                            isAlert: true,
+                            onConfirm: () => setDialogConfig(prev => ({ ...prev, isOpen: false }))
+                        });
+                    }, 100);
+                    return;
+                }
+
+                navigate(`/admin/delivery?orderIds=${newIds.join(',')}`);
+            }
+        });
+    };
+
+    const handleStepClick = async (orderId) => {
+        setModalOpen(true);
+        setDetailsLoading(true);
+        try {
+            const res = await fetch(`${API_URL}/api/orders/${orderId}`);
+            const data = await res.json();
+            setSelectedOrder(data);
+            setDetailsLoading(false);
+        } catch (error) {
+            console.error("Error fetching details:", error);
+            setDetailsLoading(false);
+        }
+    };
+
+    const handleUpdateStatus = async (orderId, newStatus) => {
+        try {
+            await fetch(`${API_URL}/api/orders/${orderId}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            // If order is being marked as DELIVERED or COMPLETED, remove it from the route
+            if (newStatus === 'DELIVERED' || newStatus === 'COMPLETED') {
+                // Close the modal
+                setModalOpen(false);
+                setSelectedOrder(null);
+
+                // Check if we're in batch mode (specific orderIds in URL)
+                const params = new URLSearchParams(location.search);
+                const currentOrderIds = params.get('orderIds');
+
+                if (currentOrderIds) {
+                    // Batch mode: Remove the delivered order from the URL
+                    const remainingIds = currentOrderIds.split(',').filter(id => String(id) !== String(orderId));
+
+                    if (remainingIds.length === 0) {
+                        // No more orders in batch, go to view-all
+                        navigate('/admin/delivery');
+                    } else {
+                        // Update URL with remaining order IDs
+                        navigate(`/admin/delivery?orderIds=${remainingIds.join(',')}`);
+                    }
+                } else {
+                    // Default mode: Just refresh route (delivered orders auto-excluded by backend)
+                    fetchRoute();
+                }
+            } else {
+                // Status change that keeps order in route (e.g., PAID → DELIVERING)
+                setSelectedOrder(prev => ({ ...prev, order_status: newStatus }));
+                fetchRoute();
+            }
+        } catch (error) {
+            console.error("Error updating status:", error);
+        }
+    };
+
+    const closeModal = () => {
+        setModalOpen(false);
+        setSelectedOrder(null);
+    };
 
     return (
         <div className="admin-page">
@@ -240,20 +346,177 @@ export default function AdminDeliveryMap() {
                     <h3>Optimal Sequence</h3>
                     <div className="route-steps">
                         {routeData?.route.map((stop, idx) => (
-                            <div className={`route-step ${progress > (idx / routeData.route.length) * 100 ? 'completed' : ''}`} key={stop.order_id}>
+                            <div
+                                className={`route-step ${progress > (idx / routeData.route.length) * 100 ? 'completed' : ''}`}
+                                key={stop.order_id}
+                                onClick={() => handleStepClick(stop.order_id)}
+                                style={{ cursor: 'pointer', position: 'relative' }}
+                            >
                                 <div className="step-number">{idx + 1}</div>
                                 <div className="step-info">
                                     <div className="step-title">{stop.addresses?.address_line1}</div>
                                     <div className="step-subtitle">{stop.customers?.name} • Order #{stop.order_id}</div>
                                 </div>
-                                <div className="step-status">
-                                    {progress > (idx / routeData.route.length) * 100 ? '✅' : '⏳'}
+                                <div className="step-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div className="step-status">
+                                        {progress > (idx / routeData.route.length) * 100 ? '✅' : '⏳'}
+                                    </div>
+                                    <button
+                                        className="delete-step-btn"
+                                        onClick={(e) => handleDeleteStep(e, stop.order_id)}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: '#ef4444',
+                                            cursor: 'pointer',
+                                            padding: '4px',
+                                            fontSize: '1.1rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}
+                                        title="Remove from route"
+                                    >
+                                        ✕
+                                    </button>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
             </div>
-        </div>
+
+            {/* Order Details Modal */}
+            <div className={`modal-overlay ${modalOpen ? 'open' : ''}`} onClick={(e) => { if (e.target.className.includes('modal-overlay')) closeModal(); }}>
+                <div className="modal-content">
+                    <button className="close-modal" onClick={closeModal}>×</button>
+
+                    {detailsLoading ? (
+                        <div style={{ textAlign: 'center', padding: '2rem' }}>Loading Details...</div>
+                    ) : !selectedOrder ? (
+                        <div style={{ textAlign: 'center', padding: '2rem' }}>Select an order to view details.</div>
+                    ) : selectedOrder.error ? (
+                        <div style={{ textAlign: 'center', padding: '2rem', color: 'red' }}>
+                            Error loading details: {selectedOrder.error}
+                        </div>
+                    ) : (
+                        <>
+                            <div className="modal-header">
+                                <h3>Order #{selectedOrder.order_id}</h3>
+                                <p>Placed on {new Date(selectedOrder.created_at).toLocaleString()}</p>
+                            </div>
+
+                            <div className="detail-section">
+                                <h4>Customer Details</h4>
+                                <div className="detail-row">
+                                    <span className="detail-label">Name</span>
+                                    <span className="detail-value">{selectedOrder.customers?.name}</span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">Email</span>
+                                    <span className="detail-value">{selectedOrder.customers?.email}</span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">Phone</span>
+                                    <span className="detail-value">{selectedOrder.customers?.phone}</span>
+                                </div>
+                            </div>
+
+                            <div className="detail-section">
+                                <h4>Delivery Address</h4>
+                                <div style={{ color: '#1f2937', fontWeight: 500 }}>
+                                    {selectedOrder.addresses?.address_line1}<br />
+                                    {selectedOrder.addresses?.city}, {selectedOrder.addresses?.country}
+                                </div>
+                            </div>
+
+                            <div className="detail-section">
+                                <h4>Items Ordered</h4>
+                                <div className="items-list">
+                                    {selectedOrder.order_items?.map((item, idx) => (
+                                        <div className="item-row" key={idx}>
+                                            <div className="item-name" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                {item.items?.image && (
+                                                    <img src={item.items.image} alt={item.items.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
+                                                )}
+                                                <div>
+                                                    {item.items?.name || 'Unknown Item'}
+                                                    <span>Qty: {item.quantity}</span>
+                                                </div>
+                                            </div>
+                                            <div className="item-price">
+                                                ₹{item.price * item.quantity}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <div className="item-row" style={{ borderTop: '2px solid #e5e7eb', marginTop: '0.5rem', paddingTop: '0.5rem', fontWeight: 700 }}>
+                                        <span>Total Amount</span>
+                                        <span>₹{selectedOrder.total_amount}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="detail-section">
+                                <h4>Payment Status</h4>
+                                <div className="detail-row">
+                                    <span className="detail-label">Status</span>
+                                    <span className={`status-badge status-${selectedOrder.order_status?.toLowerCase()}`}>
+                                        {selectedOrder.order_status}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="detail-section" style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1.5rem' }}>
+                                <h4>Update Status</h4>
+                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                                    {selectedOrder.order_status === 'PAID' && (
+                                        <button
+                                            className="cta-button"
+                                            style={{ marginTop: 0, padding: '0.5rem 1rem', fontSize: '0.9rem', width: 'auto', backgroundColor: '#3b82f6' }}
+                                            onClick={() => handleUpdateStatus(selectedOrder.order_id, 'DELIVERING')}
+                                        >
+                                            🚚 Mark as Delivering
+                                        </button>
+                                    )}
+                                    {selectedOrder.order_status === 'DELIVERING' && (
+                                        <button
+                                            className="cta-button"
+                                            style={{ marginTop: 0, padding: '0.5rem 1rem', fontSize: '0.9rem', width: 'auto', backgroundColor: '#f59e0b' }}
+                                            onClick={() => handleUpdateStatus(selectedOrder.order_id, 'DELIVERED')}
+                                        >
+                                            📦 Mark as Delivered
+                                        </button>
+                                    )}
+                                    {(selectedOrder.order_status === 'DELIVERING' || selectedOrder.order_status === 'DELIVERED') && (
+                                        <button
+                                            className="cta-button"
+                                            style={{ marginTop: 0, padding: '0.5rem 1rem', fontSize: '0.9rem', width: 'auto', backgroundColor: '#10b981' }}
+                                            onClick={() => handleUpdateStatus(selectedOrder.order_id, 'COMPLETED')}
+                                        >
+                                            ✅ Mark as Completed
+                                        </button>
+                                    )}
+                                    {selectedOrder.order_status === 'COMPLETED' && (
+                                        <div style={{ padding: '0.5rem 1rem', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', color: '#15803d', fontWeight: 600 }}>
+                                            ✅ This order has been completed
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+
+            <ConfirmationDialog
+                isOpen={dialogConfig.isOpen}
+                title={dialogConfig.title}
+                message={dialogConfig.message}
+                onConfirm={dialogConfig.onConfirm}
+                onCancel={() => setDialogConfig(prev => ({ ...prev, isOpen: false }))}
+                isAlert={dialogConfig.isAlert}
+                confirmText={dialogConfig.isAlert ? "OK" : "Confirm"}
+            />
+        </div >
     );
 }

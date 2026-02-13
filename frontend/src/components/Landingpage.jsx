@@ -3,6 +3,7 @@ import { getItems } from "../services/api";
 import Calendar from "../test/Calendar";
 export default function LandingPage({ onAddToCart }) {
   const [items, setItems] = useState([]);
+  const [activeCategory, setActiveCategory] = useState("Fish"); // Default to Fish as we know we have data there
   const [showDetails, setShowDetails] = useState(false);
   const [data, setData] = useState(null);
 
@@ -61,23 +62,43 @@ export default function LandingPage({ onAddToCart }) {
 
       {/* Product Showcase */}
       <section id="products" className="products-section">
-        <h2 className="section-title">Our Best Sellers</h2>
-        <div className="item-grid">
-          {items.map((item) => (
-            <div key={item.id} className="item-card">
-              <img src={item.image} alt={item.name} className="item-image" />
-              <div className="item-details">
-                <h3>{item.name}</h3>
-                <p className="item-price">£{item.price}</p>
-                <button
-                  className={`add-btn ${addedItems[item.id] ? 'added' : ''}`}
-                  onClick={() => handleAddToCartClick(item)}
-                >
-                  {addedItems[item.id] ? 'Added! ✔️' : 'Add to Cart'}
-                </button>
-              </div>
-            </div>
+        <h2 className="section-title">Our Products</h2>
+
+        {/* Category Tabs */}
+        <div className="category-tabs">
+          {["Grocery", "Chicken", "Goat", "Fish"].map((category) => (
+            <button
+              key={category}
+              className={`tab-btn ${activeCategory === category ? "active" : ""}`}
+              onClick={() => setActiveCategory(category)}
+            >
+              {category}
+            </button>
           ))}
+        </div>
+
+        <div className="item-grid">
+          {items
+            .filter((item) => {
+              const cat = item.category ? item.category.toLowerCase() : "";
+              if (activeCategory === "Fish") return cat === "fish" || cat === "seafood";
+              return cat === activeCategory.toLowerCase();
+            })
+            .map((item) => (
+              <div key={item.id} className="item-card">
+                <img src={item.image} alt={item.name} className="item-image" />
+                <div className="item-details">
+                  <h3>{item.name}</h3>
+                  <p className="item-price">£{item.price}</p>
+                  <button
+                    className={`add-btn ${addedItems[item.id] ? 'added' : ''}`}
+                    onClick={() => handleAddToCartClick(item)}
+                  >
+                    {addedItems[item.id] ? 'Added! ✔️' : 'Add to Cart'}
+                  </button>
+                </div>
+              </div>
+            ))}
         </div>
       </section>
 

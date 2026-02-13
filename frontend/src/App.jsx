@@ -13,10 +13,13 @@ import AdminOrders from "./admin/AdminOrders";
 import AdminCustomers from "./admin/AdminCustomers";
 import AdminDeliveryMap from "./admin/AdminDeliveryMap";
 
+import ConfirmationDialog from "./components/ConfirmationDialog";
+
 function App() {
   const [user, setUser] = useState(null);
   const [cart, setCart] = useState([]);
   const [authLoading, setAuthLoading] = useState(true);
+  const [dialogConfig, setDialogConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: () => { } });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -59,9 +62,17 @@ function App() {
 
   const handleCheckout = () => navigate("/payment");
   const handlePaymentSuccess = () => {
-    alert("🎉 Payment completed successfully!");
-    setCart([]);
-    navigate("/");
+    setDialogConfig({
+      isOpen: true,
+      title: "Success",
+      message: "🎉 Payment completed successfully!",
+      isAlert: true,
+      onConfirm: () => {
+        setDialogConfig(prev => ({ ...prev, isOpen: false }));
+        setCart([]);
+        navigate("/");
+      }
+    });
   };
 
   if (authLoading) return <div className="loading">Loading...</div>;
@@ -123,7 +134,17 @@ function App() {
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
-    </div>
+
+      <ConfirmationDialog
+        isOpen={dialogConfig.isOpen}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        onConfirm={dialogConfig.onConfirm}
+        onCancel={() => setDialogConfig(prev => ({ ...prev, isOpen: false }))}
+        isAlert={dialogConfig.isAlert}
+        confirmText="OK"
+      />
+    </div >
   );
 }
 
