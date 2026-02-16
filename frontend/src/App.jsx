@@ -61,11 +61,12 @@ function App() {
   };
 
   const handleCheckout = () => navigate("/payment");
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = (method = 'card') => {
+    const isCOD = method === 'cod';
     setDialogConfig({
       isOpen: true,
       title: "Success",
-      message: "🎉 Payment completed successfully!",
+      message: isCOD ? "🎉 Order placed successfully! Please pay on delivery." : "🎉 Payment completed successfully!",
       isAlert: true,
       onConfirm: () => {
         setDialogConfig(prev => ({ ...prev, isOpen: false }));

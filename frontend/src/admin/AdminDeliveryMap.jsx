@@ -343,21 +343,98 @@ export default function AdminDeliveryMap() {
                 </div>
 
                 <div className="route-list-container">
+                    <style>{`
+                        .cod-switch-container {
+                            display: flex;
+                            align-items: center;
+                            padding: 4px 8px;
+                            background: #fffbeb;
+                            border-radius: 6px;
+                            border: 1px solid #fde68a;
+                        }
+                        .cod-switch { 
+                            position: relative; 
+                            display: inline-block; 
+                            width: 32px; 
+                            height: 18px; 
+                        }
+                        .cod-switch input { opacity: 0; width: 0; height: 0; }
+                        .cod-slider {
+                            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+                            backgroundColor: #cbd5e1; transition: .4s; border-radius: 34px;
+                        }
+                        .cod-knob {
+                            position: absolute; content: ""; height: 14px; width: 14px;
+                            left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%;
+                        }
+                        .cod-switch input:checked + .cod-slider { background-color: #10b981; }
+                        .cod-switch input:checked + .cod-slider + .cod-knob { transform: translateX(14px); }
+                        
+                        .route-step.pending-cod-item {
+                            border-left-color: #f59e0b;
+                        }
+                        .route-step.pending-cod-item .step-number {
+                            background-color: #f59e0b;
+                        }
+                    `}</style>
                     <h3>Optimal Sequence</h3>
                     <div className="route-steps">
                         {routeData?.route.map((stop, idx) => (
                             <div
-                                className={`route-step ${progress > (idx / routeData.route.length) * 100 ? 'completed' : ''}`}
+                                className={`route-step ${progress > (idx / routeData.route.length) * 100 ? 'completed' : ''} ${stop.order_status === 'PENDING' ? 'pending-cod-item' : ''}`}
                                 key={stop.order_id}
                                 onClick={() => handleStepClick(stop.order_id)}
                                 style={{ cursor: 'pointer', position: 'relative' }}
                             >
-                                <div className="step-number">{idx + 1}</div>
-                                <div className="step-info">
-                                    <div className="step-title">{stop.addresses?.address_line1}</div>
+                                <div className="step-number" style={{ flexShrink: 0 }}>{idx + 1}</div>
+                                <div className="step-info" style={{ minWidth: 0 }}>
+                                    <div className="step-title" style={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>{stop.addresses?.address_line1}</div>
                                     <div className="step-subtitle">{stop.customers?.name} • Order #{stop.order_id}</div>
                                 </div>
-                                <div className="step-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div className="step-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
+                                    {/* COD Switch or Paid Badge */}
+                                    {stop.order_status === 'PENDING' ? (
+                                        <div
+                                            className="cod-switch-container"
+                                            onClick={(e) => e.stopPropagation()}
+                                            title="Mark COD as Paid"
+                                        >
+                                            <span style={{ fontSize: '0.65rem', marginRight: '6px', fontWeight: 'bold', color: '#b45309', textTransform: 'uppercase' }}>COD</span>
+                                            <label className="cod-switch">
+                                                <input
+                                                    type="checkbox"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        setDialogConfig({
+                                                            isOpen: true,
+                                                            title: "Confirm Payment",
+                                                            message: `Confirm collection of payment for Order #${stop.order_id}?`,
+                                                            isAlert: false,
+                                                            onConfirm: () => {
+                                                                handleUpdateStatus(stop.order_id, 'PAID');
+                                                                setDialogConfig(prev => ({ ...prev, isOpen: false }));
+                                                            }
+                                                        });
+                                                    }}
+                                                />
+                                                <span className="cod-slider"></span>
+                                                <span className="cod-knob"></span>
+                                            </label>
+                                        </div>
+                                    ) : (
+                                        <div style={{
+                                            backgroundColor: '#dcfce7',
+                                            color: '#166534',
+                                            padding: '2px 8px',
+                                            borderRadius: '12px',
+                                            fontSize: '0.7rem',
+                                            fontWeight: 'bold',
+                                            textTransform: 'uppercase'
+                                        }}>
+                                            Paid
+                                        </div>
+                                    )}
+
                                     <div className="step-status">
                                         {progress > (idx / routeData.route.length) * 100 ? '✅' : '⏳'}
                                     </div>
@@ -469,7 +546,7 @@ export default function AdminDeliveryMap() {
                             <div className="detail-section" style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1.5rem' }}>
                                 <h4>Update Status</h4>
                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                                    {selectedOrder.order_status === 'PAID' && (
+                                    {(selectedOrder.order_status === 'PAID' || selectedOrder.order_status === 'PENDING') && (
                                         <button
                                             className="cta-button"
                                             style={{ marginTop: 0, padding: '0.5rem 1rem', fontSize: '0.9rem', width: 'auto', backgroundColor: '#3b82f6' }}

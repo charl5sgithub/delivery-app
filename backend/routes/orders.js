@@ -7,7 +7,8 @@ const router = express.Router();
 // Checkout endpoint - Create Customer -> Address -> Order -> Payment
 // Checkout endpoint - Create Customer -> Address -> Order -> Order Items -> Payment
 router.post("/checkout", async (req, res) => {
-  const { name, email, phone, address, items, total } = req.body;
+  const { name, email, phone, address, items, total, paymentMethod, latitude, longitude } = req.body;
+  const isCOD = paymentMethod === 'cod';
 
   try {
     // 1. Create or Find Customer
@@ -27,7 +28,9 @@ router.post("/checkout", async (req, res) => {
         customer_id: customer.customer_id,
         address_line1: address,
         city: "Unknown",
-        country: "India"
+        country: "India",
+        latitude: latitude || 0.0,
+        longitude: longitude || 0.0
       }])
       .select("address_id")
       .single();
@@ -41,7 +44,7 @@ router.post("/checkout", async (req, res) => {
         customer_id: customer.customer_id,
         address_id: addr.address_id,
         total_amount: total,
-        order_status: "PAID"
+        order_status: isCOD ? "PENDING" : "PAID"
       }])
       .select("order_id")
       .single();
@@ -68,9 +71,9 @@ router.post("/checkout", async (req, res) => {
       .insert([{
         order_id: order.order_id,
         amount: total,
-        status: "success",
-        payment_method: "card",
-        transaction_id: `sim_${Date.now()}`
+        status: isCOD ? "pending" : "success",
+        payment_method: isCOD ? "cod" : "card",
+        transaction_id: isCOD ? `cod_${Date.now()}` : `sim_${Date.now()}`
       }]);
 
     if (payError) throw new Error(`Payment Error: ${payError.message}`);

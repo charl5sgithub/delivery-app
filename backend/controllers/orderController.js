@@ -188,6 +188,17 @@ export const updateOrderStatus = async (req, res) => {
             .single();
 
         if (error) throw error;
+
+        // If status is changed to PAID, ensure payment record is updated to success
+        if (status === 'PAID') {
+            const { error: payError } = await supabase
+                .from("payments")
+                .update({ status: 'success' })
+                .eq("order_id", id);
+
+            if (payError) console.error("Error updating payment status:", payError);
+        }
+
         res.json(data);
     } catch (error) {
         res.status(500).json({ error: error.message });
