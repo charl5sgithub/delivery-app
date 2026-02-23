@@ -1,6 +1,6 @@
 import express from "express";
 import { supabase } from "../db/supabaseClient.js";
-import { getOrders, getOrderDetails, exportOrders, updateOrderStatus } from "../controllers/orderController.js";
+import { getOrders, getOrderDetails, exportOrders, updateOrderStatus, calculateOrders } from "../controllers/orderController.js";
 
 const router = express.Router();
 
@@ -91,6 +91,9 @@ router.get("/", getOrders);
 
 // Export orders to CSV
 router.get("/export", exportOrders);
+
+// Calculate financial breakdown for selected orders
+router.post("/calculate", calculateOrders);
 
 // Get order details
 router.get("/:id", getOrderDetails);

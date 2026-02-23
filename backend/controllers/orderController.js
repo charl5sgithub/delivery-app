@@ -205,3 +205,100 @@ export const updateOrderStatus = async (req, res) => {
     }
 };
 
+/**
+ * POST /api/orders/calculate
+ * Body: { orderIds: string[] }
+ *
+ * Returns a financial breakdown for the supplied order IDs:
+ *  - totalOrderAmount   — sum of orders.total_amount
+ *  - totalPaid          — sum of successful payments
+ *  - paidByCard         — sum of card payments (payment_method = 'card')
+ *  - paidByCash         — sum of COD payments  (payment_method = 'cod')
+ *  - remaining          — totalOrderAmount − totalPaid
+ *  - orderCount         — how many orders were included
+ *  - orders             — per-order breakdown array
+ */
+export const calculateOrders = async (req, res) => {
+    try {
+        const { orderIds } = req.body;
+
+        if (!Array.isArray(orderIds) || orderIds.length === 0) {
+            return res.status(400).json({ error: 'orderIds must be a non-empty array.' });
+        }
+
+        // Fetch the orders with their payments in one query
+        const { data: orders, error: ordersError } = await supabase
+            .from('orders')
+            .select(`
+                order_id,
+                total_amount,
+                order_status,
+                customers (name, email),
+                payments (payment_method, amount, status)
+            `)
+            .in('order_id', orderIds);
+
+        if (ordersError) throw ordersError;
+
+        // Build the breakdown
+        let totalOrderAmount = 0;
+        let totalPaid = 0;
+        let paidByCard = 0;
+        let paidByCash = 0;
+
+        const orderBreakdown = orders.map(order => {
+            const orderTotal = parseFloat(order.total_amount) || 0;
+            totalOrderAmount += orderTotal;
+
+            let orderPaid = 0;
+            let orderCard = 0;
+            let orderCash = 0;
+
+            (order.payments || []).forEach(payment => {
+                const amt = parseFloat(payment.amount) || 0;
+                const method = (payment.payment_method || '').toLowerCase();
+
+                // Only count successful/pending-COD payments
+                if (payment.status === 'success' || payment.status === 'pending') {
+                    orderPaid += amt;
+                    if (method === 'card' || method === 'stripe') {
+                        orderCard += amt;
+                    } else if (method === 'cod' || method === 'cash') {
+                        orderCash += amt;
+                    }
+                }
+            });
+
+            totalPaid += orderPaid;
+            paidByCard += orderCard;
+            paidByCash += orderCash;
+
+            return {
+                order_id: order.order_id,
+                customerName: order.customers?.name || 'Unknown',
+                order_status: order.order_status,
+                total_amount: orderTotal,
+                paid: orderPaid,
+                remaining: Math.max(0, orderTotal - orderPaid),
+            };
+        });
+
+        const remaining = Math.max(0, totalOrderAmount - totalPaid);
+
+        res.json({
+            orderCount: orders.length,
+            totalOrderAmount: parseFloat(totalOrderAmount.toFixed(2)),
+            totalPaid: parseFloat(totalPaid.toFixed(2)),
+            paidByCard: parseFloat(paidByCard.toFixed(2)),
+            paidByCash: parseFloat(paidByCash.toFixed(2)),
+            remaining: parseFloat(remaining.toFixed(2)),
+            orders: orderBreakdown,
+        });
+
+    } catch (error) {
+        console.error('Calculate Orders Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+

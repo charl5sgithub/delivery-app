@@ -95,7 +95,6 @@ function App() {
                     <button
                       className="admin-btn"
                       onClick={() => navigate("/admin/orders")}
-                      style={{ marginRight: "10px", backgroundColor: "#374151" }}
                     >
                       Admin Panel
                     </button>
