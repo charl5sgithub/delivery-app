@@ -1,90 +1,86 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
-import { onAuthStateChanged } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { auth } from "../firebaseConfig";
+import { useAuth } from "./context/AuthContext";
+
 import Login from "./components/Login";
 import Cart from "./components/Cart";
 import PaymentPage from "./components/PaymentPage";
 import LandingPage from "./components/Landingpage";
-import "./App.css";
-
 import AdminLayout from "./components/AdminLayout";
 import AdminOrders from "./admin/AdminOrders";
 import AdminCustomers from "./admin/AdminCustomers";
 import AdminDeliveryMap from "./admin/AdminDeliveryMap";
-
 import ConfirmationDialog from "./components/ConfirmationDialog";
+import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+
+import "./App.css";
 
 function App() {
-  const [user, setUser] = useState(null);
+  const { user, isAdmin, authLoading } = useAuth();
   const [cart, setCart] = useState([]);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [dialogConfig, setDialogConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: () => { } });
+  const [dialogConfig, setDialogConfig] = useState({
+    isOpen: false, title: "", message: "", onConfirm: () => { }
+  });
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setAuthLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
+  if (authLoading) return <div className="loading">Loading…</div>;
+  if (!user) return <Login />;
 
+  // ── Cart helpers ──────────────────────────────────────────────────────────
   const handleAddToCart = (item) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((cartItem) => cartItem.id === item.id);
-      if (existingItem) {
-        return prevCart.map((cartItem) =>
-          cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
+    setCart((prev) => {
+      const existing = prev.find((c) => c.id === item.id);
+      if (existing) {
+        return prev.map((c) =>
+          c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c
         );
       }
-      return [...prevCart, { ...item, quantity: 1 }];
+      return [...prev, { ...item, quantity: 1 }];
     });
   };
 
   const handleUpdateQuantity = (itemId, delta) => {
-    setCart((prevCart) => {
-      return prevCart.map((item) => {
-        if (item.id === itemId) {
-          const newQuantity = Math.max(1, item.quantity + delta);
-          return { ...item, quantity: newQuantity };
-        }
-        return item;
-      });
-    });
+    setCart((prev) =>
+      prev.map((item) =>
+        item.id === itemId
+          ? { ...item, quantity: Math.max(1, item.quantity + delta) }
+          : item
+      )
+    );
   };
 
   const handleRemoveFromCart = (itemId) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== itemId));
+    setCart((prev) => prev.filter((item) => item.id !== itemId));
   };
 
   const handleCheckout = () => navigate("/payment");
-  const handlePaymentSuccess = (method = 'card') => {
-    const isCOD = method === 'cod';
+
+  const handlePaymentSuccess = (method = "card") => {
+    const isCOD = method === "cod";
     setDialogConfig({
       isOpen: true,
       title: "Success",
-      message: isCOD ? "🎉 Order placed successfully! Please pay on delivery." : "🎉 Payment completed successfully!",
+      message: isCOD
+        ? "🎉 Order placed successfully! Please pay on delivery."
+        : "🎉 Payment completed successfully!",
       isAlert: true,
       onConfirm: () => {
-        setDialogConfig(prev => ({ ...prev, isOpen: false }));
+        setDialogConfig((prev) => ({ ...prev, isOpen: false }));
         setCart([]);
         navigate("/");
       }
     });
   };
 
-  if (authLoading) return <div className="loading">Loading...</div>;
-
-  if (!user) return <Login onLogin={setUser} />;
-
+  const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
     <div className="app-container">
       <Routes>
+        {/* ── Home ──────────────────────────────────────────────────────── */}
         <Route
           path="/"
           element={
@@ -94,11 +90,21 @@ function App() {
                   <h1>Welcome, {user.displayName}</h1>
                 </div>
                 <div className="header-right">
-                  <button className="admin-btn" onClick={() => navigate("/admin/orders")} style={{ marginRight: '10px', backgroundColor: '#374151' }}>
-                    Admin Panel
-                  </button>
-                  <button className="cart-toggle" onClick={() => navigate("/cart")}>
-                    View Cart ({cart.reduce((acc, item) => acc + item.quantity, 0)})
+                  {/* Only SuperUser / Admin see the Admin Panel button */}
+                  {isAdmin && (
+                    <button
+                      className="admin-btn"
+                      onClick={() => navigate("/admin/orders")}
+                      style={{ marginRight: "10px", backgroundColor: "#374151" }}
+                    >
+                      Admin Panel
+                    </button>
+                  )}
+                  <button
+                    className="cart-toggle"
+                    onClick={() => navigate("/cart")}
+                  >
+                    View Cart ({cartCount})
                   </button>
                 </div>
               </header>
@@ -106,6 +112,8 @@ function App() {
             </>
           }
         />
+
+        {/* ── Cart ──────────────────────────────────────────────────────── */}
         <Route
           path="/cart"
           element={
@@ -118,15 +126,28 @@ function App() {
             />
           }
         />
+
+        {/* ── Payment ───────────────────────────────────────────────────── */}
         <Route
           path="/payment"
           element={
-            <PaymentPage total={total} cart={cart} onPaymentSuccess={handlePaymentSuccess} />
+            <PaymentPage
+              total={total}
+              cart={cart}
+              onPaymentSuccess={handlePaymentSuccess}
+            />
           }
         />
 
-        {/* Admin Routes */}
-        <Route path="/admin" element={<AdminLayout user={user} />}>
+        {/* ── Admin (RBAC-guarded) ───────────────────────────────────────── */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedAdminRoute>
+              <AdminLayout user={user} />
+            </ProtectedAdminRoute>
+          }
+        >
           <Route path="orders" element={<AdminOrders />} />
           <Route path="customers" element={<AdminCustomers />} />
           <Route path="delivery" element={<AdminDeliveryMap />} />
@@ -141,11 +162,11 @@ function App() {
         title={dialogConfig.title}
         message={dialogConfig.message}
         onConfirm={dialogConfig.onConfirm}
-        onCancel={() => setDialogConfig(prev => ({ ...prev, isOpen: false }))}
+        onCancel={() => setDialogConfig((prev) => ({ ...prev, isOpen: false }))}
         isAlert={dialogConfig.isAlert}
         confirmText="OK"
       />
-    </div >
+    </div>
   );
 }
 
