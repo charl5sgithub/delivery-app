@@ -232,19 +232,45 @@ body {
   margin: 0;
 }
 
-.cart-toggle {
+.cart-toggle,
+.admin-btn {
   background-color: var(--primary-color);
   color: var(--white);
   border: none;
-  padding: 0.5rem 1.25rem;
-  border-radius: 9999px;
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  /* Consistent border radius */
   font-weight: 600;
+  font-size: 0.95rem;
+  /* Consistent font size */
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
 }
 
-.cart-toggle:hover {
+.cart-toggle:hover,
+.admin-btn:hover {
   background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.admin-btn {
+  background-color: #374151;
+  margin-right: 12px;
+}
+
+.cart-toggle:active,
+.admin-btn:active {
+  transform: scale(0.96);
+}
+
+.admin-btn:hover {
+  background-color: #1f2937;
 }
 
 /* Landing Page */
@@ -288,10 +314,10 @@ body {
   background-color: var(--secondary-color);
   color: var(--white);
   border: none;
-  padding: 1rem 2rem;
-  font-size: 1.125rem;
+  padding: 0.6rem 1.5rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  border-radius: 9999px;
+  border-radius: 8px;
   cursor: pointer;
   transition: transform 0.2s, background-color 0.2s;
 }
@@ -480,13 +506,11 @@ body {
 .checkout-btn {
   background-color: var(--primary-color);
   color: var(--white);
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
+  padding: 0.6rem 1.5rem;
   border: none;
   font-weight: 600;
-  font-size: 1.125rem;
-  font-weight: 600;
-  border-radius: 9999px;
+  font-size: 0.95rem;
+  border-radius: 8px;
   cursor: pointer;
   transition: transform 0.2s, background-color 0.2s;
 }
@@ -675,10 +699,11 @@ body {
 .checkout-btn {
   background-color: var(--primary-color);
   color: var(--white);
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
   border: none;
   font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
   width: 100%;
   margin-top: 1rem;
@@ -1069,9 +1094,10 @@ body {
   background-color: var(--white);
   border: 1px solid #e5e7eb;
   color: var(--text-color);
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
   font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -1383,6 +1409,7 @@ body {
     height: auto;
   }
 }
+
 /* Category Tabs */
 .category-tabs {
   display: flex;
@@ -1413,4 +1440,3 @@ body {
   color: var(--white);
   border-color: var(--primary-color);
 }
-

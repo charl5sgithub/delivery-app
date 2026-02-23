@@ -36,12 +36,16 @@ export default function LandingPage({ onAddToCart }) {
   return (
     <div className="landing-container">
       {/* Hero Section */}
-      <section className="hero-section" style={{ backgroundImage: 'url(/fish-vegetables-hero.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <section className="hero-section" style={{
+        backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url(https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=1440&q=80)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center 30%'
+      }}>
         <div className="hero-content">
-          <h1 className="hero-title">Fish & Fresh Groceries, Delivered Fast</h1>
-          <p className="hero-subtitle">Experience the convenience of farm-fresh produce and daily essentials delivered right to your doorstep.</p>
+          <h1 className="hero-title">Premium Fish & Fresh Meat</h1>
+          <p className="hero-subtitle">The finest cuts of meat and fresh-catch seafood, delivered directly from the market to your kitchen.</p>
           <button className="cta-button" onClick={() => document.getElementById('products').scrollIntoView({ behavior: 'smooth' })}>
-            Shop Now
+            Order Now
           </button>
         </div>
       </section>
@@ -62,11 +66,11 @@ export default function LandingPage({ onAddToCart }) {
 
       {/* Product Showcase */}
       <section id="products" className="products-section">
-        <h2 className="section-title">Our Products</h2>
+        <h2 className="section-title">Our Categories</h2>
 
         {/* Category Tabs */}
         <div className="category-tabs">
-          {["Grocery", "Chicken", "Goat", "Fish"].map((category) => (
+          {["Grocery", "Meat", "Chicken", "Fish"].map((category) => (
             <button
               key={category}
               className={`tab-btn ${activeCategory === category ? "active" : ""}`}

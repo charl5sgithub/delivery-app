@@ -132,7 +132,7 @@ export default function AdminOrders() {
     };
 
     const selectableOrders = orders.filter(
-        o => o.order_status !== 'COMPLETED' && o.order_status !== 'CANCELLED' && o.order_status !== 'DELIVERED'
+        o => o.order_status !== 'CANCELLED'
     );
     const allSelected = selectedOrderIds.length > 0 && selectedOrderIds.length === selectableOrders.length;
 
@@ -207,19 +207,19 @@ export default function AdminOrders() {
                             disabled={selectedOrderIds.length === 0}
                             style={{
                                 marginTop: 0, width: 'auto',
-                                padding: '8px 18px',
+                                padding: '0.6rem 1.5rem',
                                 borderRadius: '8px',
                                 border: 'none',
                                 fontWeight: 600,
-                                fontSize: '0.9rem',
+                                fontSize: '0.95rem',
                                 cursor: selectedOrderIds.length === 0 ? 'not-allowed' : 'pointer',
                                 background: selectedOrderIds.length === 0
                                     ? '#374151'
                                     : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                                 color: selectedOrderIds.length === 0 ? '#6b7280' : '#fff',
                                 boxShadow: selectedOrderIds.length > 0 ? '0 4px 14px rgba(99,102,241,.4)' : 'none',
-                                transition: 'all .2s ease',
-                                display: 'flex', alignItems: 'center', gap: '6px'
+                                transition: 'all .3s ease',
+                                display: 'flex', alignItems: 'center', gap: '8px'
                             }}
                         >
                             💰 Calculate Amount
@@ -239,7 +239,16 @@ export default function AdminOrders() {
                             <button
                                 className="cta-button"
                                 onClick={handleCalculateRoute}
-                                style={{ marginTop: 0, width: 'auto', backgroundColor: '#10b981' }}
+                                style={{
+                                    marginTop: 0,
+                                    width: 'auto',
+                                    backgroundColor: '#10b981',
+                                    padding: '0.6rem 1.5rem',
+                                    borderRadius: '8px',
+                                    fontSize: '0.95rem',
+                                    fontWeight: 600,
+                                    height: 'auto'
+                                }}
                             >
                                 🗺️ Calculate Route ({selectedOrderIds.length})
                             </button>
@@ -286,8 +295,16 @@ export default function AdminOrders() {
                     </div>
 
                     <div style={{ display: 'flex', gap: '10px' }}>
-                        <button type="submit" className="login-button" style={{ marginTop: 0, width: 'auto', height: '42px' }}>Filter</button>
-                        <button type="button" className="btn-secondary" onClick={handleReset} style={{ marginTop: 0, height: '42px' }}>Reset</button>
+                        <button type="submit" className="login-button" style={{
+                            marginTop: 0, width: 'auto', height: 'auto',
+                            padding: '0.6rem 1.5rem', borderRadius: '8px',
+                            fontSize: '0.95rem', fontWeight: 600
+                        }}>Filter</button>
+                        <button type="button" className="btn-secondary" onClick={handleReset} style={{
+                            marginTop: 0, height: 'auto',
+                            padding: '0.6rem 1.5rem', borderRadius: '8px',
+                            fontSize: '0.95rem', fontWeight: 600
+                        }}>Reset</button>
                     </div>
                 </form>
             </div>
@@ -320,7 +337,7 @@ export default function AdminOrders() {
                             <tr><td colSpan="7" style={{ textAlign: 'center' }}>No orders found.</td></tr>
                         ) : (
                             orders.map(order => {
-                                const isDisabled = ['COMPLETED', 'CANCELLED', 'DELIVERED'].includes(order.order_status);
+                                const isDisabled = order.order_status === 'CANCELLED';
                                 const isSelected = selectedOrderIds.includes(order.order_id);
                                 return (
                                     <tr
