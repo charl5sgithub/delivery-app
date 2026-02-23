@@ -115,3 +115,80 @@ export const exportCustomers = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+// Get a single customer's role
+export const getCustomerRole = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { data, error } = await supabase
+            .from('customers')
+            .select('customer_id, email, role')
+            .eq('customer_id', id)
+            .single();
+
+        if (error) throw error;
+        if (!data) return res.status(404).json({ error: 'Customer not found.' });
+
+        res.json({ customer_id: data.customer_id, email: data.email, role: data.role });
+    } catch (error) {
+        console.error('Get Customer Role Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Update a customer's role (SuperUser / Admin only – enforced by route middleware)
+export const updateCustomerRole = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { role } = req.body;
+
+        const VALID_ROLES = ['SuperUser', 'Admin', 'User'];
+        if (!role || !VALID_ROLES.includes(role)) {
+            return res.status(400).json({
+                error: `Invalid role. Must be one of: ${VALID_ROLES.join(', ')}`
+            });
+        }
+
+        const { data, error } = await supabase
+            .from('customers')
+            .update({ role })
+            .eq('customer_id', id)
+            .select('customer_id, name, email, role')
+            .single();
+
+        if (error) throw error;
+        if (!data) return res.status(404).json({ error: 'Customer not found.' });
+
+        res.json({ success: true, customer: data });
+    } catch (error) {
+        console.error('Update Customer Role Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get role by email – called by the frontend AuthContext right after login
+export const getRoleByEmail = async (req, res) => {
+    try {
+        const { email } = req.query;
+
+        if (!email) {
+            return res.status(400).json({ error: 'email query param is required.' });
+        }
+
+        const { data, error } = await supabase
+            .from('customers')
+            .select('role')
+            .eq('email', email)
+            .single();
+
+        if (error || !data) {
+            // User is not yet in the DB (first login before checkout) → default to User
+            return res.json({ role: 'User' });
+        }
+
+        res.json({ role: data.role });
+    } catch (error) {
+        console.error('Get Role By Email Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
