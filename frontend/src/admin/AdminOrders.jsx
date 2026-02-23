@@ -487,7 +487,7 @@ export default function AdminOrders() {
                             <div className="detail-section" style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1.5rem' }}>
                                 <h4>Update Status</h4>
                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                                    {selectedOrder.order_status === 'PAID' && (
+                                    {(selectedOrder.order_status === 'PAID' || selectedOrder.order_status === 'PENDING') && (
                                         <button
                                             className="cta-button"
                                             style={{ marginTop: 0, padding: '0.5rem 1rem', fontSize: '0.9rem', width: 'auto', backgroundColor: '#3b82f6' }}

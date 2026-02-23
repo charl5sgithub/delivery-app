@@ -52,7 +52,7 @@ export const getDeliveryRoute = async (req, res) => {
             }
         } else {
             // Default: Only orders that still need delivery (DELIVERED and COMPLETED are excluded)
-            orderQuery = orderQuery.in('order_status', ['DELIVERING', 'PAID', 'SHIPPED']);
+            orderQuery = orderQuery.in('order_status', ['DELIVERING', 'PAID', 'SHIPPED', 'PENDING']);
         }
 
         const { data: orders, error: orderError } = await orderQuery;
