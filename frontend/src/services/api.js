@@ -5,6 +5,31 @@ export async function getItems() {
   return res.json();
 }
 
+export async function createItem(itemData) {
+  const res = await fetch(`${API_URL}/api/items`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(itemData)
+  });
+  return res.json();
+}
+
+export async function updateItem(id, itemData) {
+  const res = await fetch(`${API_URL}/api/items/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(itemData)
+  });
+  return res.json();
+}
+
+export async function deleteItem(id) {
+  const res = await fetch(`${API_URL}/api/items/${id}`, {
+    method: "DELETE"
+  });
+  return res.json();
+}
+
 export async function createOrder(orderData) {
   const res = await fetch(`${API_URL}/api/orders`, {
     method: "POST",

@@ -69,10 +69,11 @@ export default function AdminOrders() {
         }
     };
 
-    const handleSearch = (e) => { if (e) e.preventDefault(); setPage(1); fetchOrders(); };
+    const handleSearch = (e) => { if (e) e.preventDefault(); setPage(1); setSelectedOrderIds([]); fetchOrders(); };
 
     const handleReset = () => {
         setSearch(''); setStartDate(''); setEndDate(''); setOrderIdFilter(''); setStatusFilter('');
+        setSelectedOrderIds([]);
         setPage(1);
         setLoading(true);
         fetch(`${API_URL}/api/orders?${new URLSearchParams({ page: 1, limit, sortBy, sortOrder, search: '', startDate: '', endDate: '', orderId: '', status: '' })}`)
@@ -87,7 +88,19 @@ export default function AdminOrders() {
         else { setSortBy(field); setSortOrder('desc'); }
     };
 
-    const handleExport = () => window.open(`${API_URL}/api/orders/export?search=${search}`, '_blank');
+    const handleExport = () => {
+        const params = new URLSearchParams();
+        if (selectedOrderIds.length > 0) {
+            params.append('ids', selectedOrderIds.join(','));
+        } else {
+            if (search) params.append('search', search);
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+            if (orderIdFilter) params.append('orderId', orderIdFilter);
+            if (statusFilter) params.append('status', statusFilter);
+        }
+        window.open(`${API_URL}/api/orders/export?${params.toString()}`, '_blank');
+    };
 
     // ── Order details modal ───────────────────────────────────────────────────
     const handleRowClick = async (orderId) => {
@@ -234,51 +247,92 @@ export default function AdminOrders() {
                             )}
                         </button>
 
-                        {/* Calculate Route — only when rows selected */}
-                        {selectedOrderIds.length > 0 && (
-                            <button
-                                className="cta-button"
-                                onClick={handleCalculateRoute}
-                                style={{
-                                    marginTop: 0,
-                                    width: 'auto',
-                                    backgroundColor: '#10b981',
-                                    padding: '0.6rem 1.5rem',
-                                    borderRadius: '8px',
-                                    fontSize: '0.95rem',
-                                    fontWeight: 600,
-                                    height: 'auto'
-                                }}
-                            >
-                                🗺️ Calculate Route ({selectedOrderIds.length})
-                            </button>
-                        )}
+                        {/* Calculate Route — always visible, enabled only when rows selected */}
+                        <button
+                            onClick={handleCalculateRoute}
+                            disabled={selectedOrderIds.length === 0}
+                            style={{
+                                marginTop: 0,
+                                width: 'auto',
+                                padding: '0.6rem 2rem',
+                                borderRadius: '10px',
+                                border: 'none',
+                                fontWeight: 700,
+                                fontSize: '0.95rem',
+                                cursor: selectedOrderIds.length === 0 ? 'not-allowed' : 'pointer',
+                                background: selectedOrderIds.length === 0
+                                    ? '#374151'
+                                    : 'linear-gradient(135deg, #10b981, #059669)',
+                                color: selectedOrderIds.length === 0 ? '#6b7280' : '#fff',
+                                boxShadow: selectedOrderIds.length > 0 ? '0 10px 15px -3px rgba(16,185,129,0.3)' : 'none',
+                                transition: 'all .3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px'
+                            }}
+                        >
+                            <span style={{ fontSize: '1.2rem', filter: selectedOrderIds.length === 0 ? 'grayscale(1)' : 'none' }}>🗺️</span>
+                            <span>Calculate Route {selectedOrderIds.length > 0 ? `(${selectedOrderIds.length})` : ''}</span>
+                        </button>
                     </div>
                 </div>
 
+                <style>{`
+                    @keyframes slideInRight {
+                        from { opacity: 0; transform: translateX(20px); }
+                        to { opacity: 1; transform: translateX(0); }
+                    }
+                    .admin-filter-bar {
+                        display: flex;
+                        gap: 15px;
+                        width: 100%;
+                        background: #fff;
+                        padding: 1.5rem;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+                        border: 1px solid #f1f5f9;
+                        flex-wrap: wrap;
+                        align-items: flex-end;
+                    }
+                    .filter-group label {
+                        font-size: 0.8rem;
+                        font-weight: 700;
+                        color: #64748b;
+                        text-transform: uppercase;
+                        letter-spacing: 0.025em;
+                        margin-bottom: 6px;
+                    }
+                    .filter-input-enhanced {
+                        background: #f8fafc;
+                        border: 1px solid #e2e8f0;
+                        transition: all 0.2s;
+                    }
+                    .filter-input-enhanced:focus {
+                        background: #fff;
+                        border-color: #6366f1;
+                        ring: 2px solid #6366f122;
+                    }
+                `}</style>
+
                 {/* ── Filter bar ────────────────────────────────────────────── */}
-                <form onSubmit={handleSearch} style={{
-                    display: 'flex', gap: '10px', width: '100%',
-                    backgroundColor: 'white', padding: '1rem', borderRadius: '8px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,.1)', flexWrap: 'wrap', alignItems: 'end'
-                }}>
-                    <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4b5563' }}>Date Range</label>
-                        <div style={{ display: 'flex', gap: '5px' }}>
-                            <input type="date" className="search-input" style={{ width: '130px' }} value={startDate} onChange={e => setStartDate(e.target.value)} />
-                            <span style={{ alignSelf: 'center' }}>-</span>
-                            <input type="date" className="search-input" style={{ width: '130px' }} value={endDate} onChange={e => setEndDate(e.target.value)} />
+                <form onSubmit={handleSearch} className="admin-filter-bar">
+                    <div className="filter-group" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label>Date Range</label>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <input type="date" className="search-input filter-input-enhanced" style={{ width: '140px' }} value={startDate} onChange={e => setStartDate(e.target.value)} />
+                            <span style={{ alignSelf: 'center', color: '#94a3b8' }}>-</span>
+                            <input type="date" className="search-input filter-input-enhanced" style={{ width: '140px' }} value={endDate} onChange={e => setEndDate(e.target.value)} />
                         </div>
                     </div>
 
-                    <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4b5563' }}>Order ID</label>
-                        <input type="text" className="search-input" placeholder="e.g. 101" style={{ width: '100px' }} value={orderIdFilter} onChange={e => setOrderIdFilter(e.target.value)} />
+                    <div className="filter-group" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label>Order ID</label>
+                        <input type="text" className="search-input filter-input-enhanced" placeholder="#ID" style={{ width: '90px' }} value={orderIdFilter} onChange={e => setOrderIdFilter(e.target.value)} />
                     </div>
 
-                    <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4b5563' }}>Status</label>
-                        <select className="search-input" style={{ width: '130px' }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+                    <div className="filter-group" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label>Status</label>
+                        <select className="search-input filter-input-enhanced" style={{ width: '140px' }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
                             <option value="">All Statuses</option>
                             <option value="PENDING">Pending</option>
                             <option value="PAID">Paid</option>
@@ -289,21 +343,29 @@ export default function AdminOrders() {
                         </select>
                     </div>
 
-                    <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                        <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4b5563' }}>Customer Search</label>
-                        <input type="text" className="search-input" placeholder="Search by customer name or email..." value={search} onChange={e => setSearch(e.target.value)} style={{ width: '100%' }} />
+                    <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', width: '250px' }}>
+                        <label>Customer Search</label>
+                        <input type="text" className="search-input filter-input-enhanced" placeholder="Name, email..." value={search} onChange={e => setSearch(e.target.value)} style={{ width: '100%' }} />
                     </div>
 
                     <div style={{ display: 'flex', gap: '10px' }}>
                         <button type="submit" className="login-button" style={{
-                            marginTop: 0, width: 'auto', height: 'auto',
-                            padding: '0.6rem 1.5rem', borderRadius: '8px',
-                            fontSize: '0.95rem', fontWeight: 600
-                        }}>Filter</button>
+                            marginTop: 0, width: 'auto', height: '42px',
+                            padding: '0 1.5rem', borderRadius: '8px',
+                            fontSize: '0.9rem', fontWeight: 700,
+                            background: '#1e2937', color: 'white',
+                            border: 'none', cursor: 'pointer',
+                            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                            transition: 'transform 0.1s'
+                        }}
+                            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
+                            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+                        >Filter</button>
                         <button type="button" className="btn-secondary" onClick={handleReset} style={{
-                            marginTop: 0, height: 'auto',
-                            padding: '0.6rem 1.5rem', borderRadius: '8px',
-                            fontSize: '0.95rem', fontWeight: 600
+                            marginTop: 0, height: '42px',
+                            padding: '0 1.5rem', borderRadius: '8px',
+                            fontSize: '0.9rem', fontWeight: 600,
+                            background: '#fff', border: '1px solid #e2e8f0'
                         }}>Reset</button>
                     </div>
                 </form>
@@ -355,7 +417,7 @@ export default function AdminOrders() {
                                                 style={{ opacity: isDisabled ? 0.3 : 1, cursor: isDisabled ? 'not-allowed' : 'pointer' }}
                                             />
                                         </td>
-                                        <td>#{String(order.order_id).substring(0, 8)}...</td>
+                                        <td>#{order.order_id}</td>
                                         <td>
                                             <div style={{ fontWeight: 500 }}>{order.customers?.name || 'Guest'}</div>
                                             <small style={{ color: '#6b7280' }}>{order.customers?.email}</small>

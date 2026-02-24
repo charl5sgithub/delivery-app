@@ -23,18 +23,14 @@ export const getOrders = async (req, res) => {
             query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`, { referencedTable: 'customers' });
         }
 
-        // Filter by Order ID (bigint)
+        // Filter by Order ID
         if (orderId) {
-            const trimmed = orderId.trim();
+            const trimmed = orderId.trim().replace(/^#/, '');
             const numericId = parseInt(trimmed, 10);
-            if (!isNaN(numericId) && String(numericId) === trimmed) {
-                // Exact numeric match
-                query = query.eq('order_id', numericId);
-            } else if (!isNaN(numericId)) {
-                // Partial numeric input - try exact match with the parsed number
+            if (!isNaN(numericId)) {
+                // For bigints, we usually want exact match, but let's be robust
                 query = query.eq('order_id', numericId);
             }
-            // If not a number at all, we skip the filter (no results would match a bigint column)
         }
 
         // Filter by Status
@@ -128,7 +124,7 @@ export const getOrderDetails = async (req, res) => {
 
 export const exportOrders = async (req, res) => {
     try {
-        const { search = "" } = req.query;
+        const { search = "", startDate, endDate, orderId, status, ids } = req.query;
 
         let query = supabase
             .from("orders")
@@ -141,8 +137,32 @@ export const exportOrders = async (req, res) => {
                 addresses (address_line1, city, country)
             `);
 
-        if (search) {
-            query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`, { referencedTable: 'customers' });
+        if (ids) {
+            const idList = ids.split(',').map(id => parseInt(id.trim().replace(/^#/, ''), 10)).filter(n => !isNaN(n));
+            if (idList.length > 0) {
+                query = query.in('order_id', idList);
+            }
+        } else {
+            if (search) {
+                query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`, { referencedTable: 'customers' });
+            }
+            if (orderId) {
+                const trimmed = orderId.trim().replace(/^#/, '');
+                const numericId = parseInt(trimmed, 10);
+                if (!isNaN(numericId)) {
+                    query = query.eq('order_id', numericId);
+                }
+            }
+            if (status) {
+                query = query.eq('order_status', status);
+            }
+            if (startDate) {
+                query = query.gte('created_at', startDate);
+            }
+            if (endDate) {
+                const endDateTime = endDate.includes('T') ? endDate : `${endDate} 23:59:59.999`;
+                query = query.lte('created_at', endDateTime);
+            }
         }
 
         query = query.order("created_at", { ascending: false });
