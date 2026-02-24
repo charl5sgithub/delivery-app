@@ -312,7 +312,7 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess }) {
           <button type="submit" disabled={loading || (paymentMethod === 'card' && !stripe)} className="pay-button" style={{
             backgroundColor: paymentMethod === 'cod' ? '#10b981' : undefined
           }}>
-            {loading ? "Processing..." : (paymentMethod === 'cod' ? "Submit Order" : `Pay ₹${total}`)}
+            {loading ? "Processing..." : (paymentMethod === 'cod' ? "Submit Order" : `Pay £${total}`)}
           </button>
           {message && <p className="payment-message">{message}</p>}
         </form>

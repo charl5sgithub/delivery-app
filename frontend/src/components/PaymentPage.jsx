@@ -54,7 +54,7 @@ export default function PaymentPage({ total, cart, onPaymentSuccess }) {
         margin: '0 auto'
       }}>
         <h2 style={{ textAlign: 'center', marginBottom: '2rem', fontSize: '2rem', color: '#1f2937' }}>💳 Secure Payment</h2>
-        <p style={{ marginBottom: '20px', textAlign: 'center', fontSize: '1.2rem' }}>Total Amount: <strong style={{ color: '#10b981' }}>₹{total}</strong></p>
+        <p style={{ marginBottom: '20px', textAlign: 'center', fontSize: '1.2rem' }}>Total Amount: <strong style={{ color: '#10b981' }}>£{total}</strong></p>
         <Elements stripe={stripePromise}>
           <CheckoutForm total={total} cart={cart} onPaymentSuccess={onPaymentSuccess} />
         </Elements>

@@ -5,7 +5,7 @@ import ConfirmationDialog from '../components/ConfirmationDialog';
 const API_URL = import.meta.env.VITE_API_URL;
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
-const fmt = (n) => `₹${Number(n ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmt = (n) => `£${Number(n ?? 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const ProgressBar = ({ value, max, colour }) => {
     const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
@@ -362,7 +362,7 @@ export default function AdminOrders() {
                                         </td>
                                         <td>{new Date(order.created_at).toLocaleDateString()} {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                                         <td><span className={`status-badge status-${order.order_status?.toLowerCase()}`}>{order.order_status}</span></td>
-                                        <td style={{ fontWeight: 600 }}>₹{order.total_amount}</td>
+                                        <td style={{ fontWeight: 600 }}>£{order.total_amount}</td>
                                         <td style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {order.addresses?.address_line1}, {order.addresses?.city}
                                         </td>
@@ -440,11 +440,11 @@ export default function AdminOrders() {
                                                 {item.items?.image && <img src={item.items.image} alt={item.items.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />}
                                                 <div>{item.items?.name || 'Unknown Item'}<span>Qty: {item.quantity}</span></div>
                                             </div>
-                                            <div className="item-price">₹{item.price * item.quantity}</div>
+                                            <div className="item-price">£{item.price * item.quantity}</div>
                                         </div>
                                     ))}
                                     <div className="item-row" style={{ borderTop: '2px solid #e5e7eb', marginTop: '0.5rem', paddingTop: '0.5rem', fontWeight: 700 }}>
-                                        <span>Total Amount</span><span>₹{selectedOrder.total_amount}</span>
+                                        <span>Total Amount</span><span>£{selectedOrder.total_amount}</span>
                                     </div>
                                 </div>
                             </div>

@@ -522,13 +522,13 @@ export default function AdminDeliveryMap() {
                                                 </div>
                                             </div>
                                             <div className="item-price">
-                                                ₹{item.price * item.quantity}
+                                                £{item.price * item.quantity}
                                             </div>
                                         </div>
                                     ))}
                                     <div className="item-row" style={{ borderTop: '2px solid #e5e7eb', marginTop: '0.5rem', paddingTop: '0.5rem', fontWeight: 700 }}>
                                         <span>Total Amount</span>
-                                        <span>₹{selectedOrder.total_amount}</span>
+                                        <span>£{selectedOrder.total_amount}</span>
                                     </div>
                                 </div>
                             </div>
