@@ -993,10 +993,19 @@ body {
   padding: 15px 20px;
   cursor: pointer;
   border-bottom: 1px solid #374151;
+  border-left: 4px solid transparent;
+  transition: all 0.2s ease;
 }
 
 .sidebar-menu li:hover {
   background-color: #374151;
+}
+
+.sidebar-menu li.active {
+  background-color: #374151;
+  border-left-color: #10b981;
+  color: #10b981;
+  font-weight: 600;
 }
 
 .logout-item {

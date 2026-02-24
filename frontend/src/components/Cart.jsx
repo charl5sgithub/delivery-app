@@ -23,7 +23,7 @@ export default function Cart({ cart, onCheckout, onUpdateQuantity, onRemoveFromC
                 <img src={item.image} alt={item.name} className="cart-item-image" />
                 <div className="cart-item-details">
                   <h3>{item.name}</h3>
-                  <p className="cart-item-price">₹{item.price}</p>
+                  <p className="cart-item-price">£{item.price}</p>
                 </div>
                 <div className="quantity-controls">
                   <button className="qty-btn" onClick={() => onUpdateQuantity(item.id, -1)}>-</button>
@@ -41,15 +41,15 @@ export default function Cart({ cart, onCheckout, onUpdateQuantity, onRemoveFromC
             <h3 className="summary-title">Order Summary</h3>
             <div className="summary-row">
               <span>Subtotal</span>
-              <span>₹{total}</span>
+              <span>£{total}</span>
             </div>
             <div className="summary-row">
               <span>Delivery Fee</span>
-              <span>₹0.00</span>
+              <span>£0.00</span>
             </div>
             <div className="summary-row total">
               <span>Total</span>
-              <span>₹{total}</span>
+              <span>£{total}</span>
             </div>
             <button className="checkout-btn" onClick={onCheckout}>
               Proceed to Payment

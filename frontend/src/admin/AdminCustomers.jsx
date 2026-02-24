@@ -338,7 +338,7 @@ export default function AdminCustomers() {
                                                     <span className={`status-badge status-${order.order_status?.toLowerCase()}`} style={{ fontSize: '0.75rem', marginRight: '10px' }}>
                                                         {order.order_status}
                                                     </span>
-                                                    ₹{order.total_amount}
+                                                    £{order.total_amount}
                                                 </div>
                                             </div>
                                         ))
