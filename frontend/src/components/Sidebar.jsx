@@ -20,6 +20,12 @@ export default function Sidebar({ onLogout }) {
                     Orders
                 </li>
                 <li
+                    className={isActive('/admin/products') ? 'active' : ''}
+                    onClick={() => navigate('/admin/products')}
+                >
+                    Products
+                </li>
+                <li
                     className={isActive('/admin/customers') ? 'active' : ''}
                     onClick={() => navigate('/admin/customers')}
                 >

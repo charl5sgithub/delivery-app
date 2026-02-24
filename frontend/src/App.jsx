@@ -12,6 +12,7 @@ import AdminLayout from "./components/AdminLayout";
 import AdminOrders from "./admin/AdminOrders";
 import AdminCustomers from "./admin/AdminCustomers";
 import AdminDeliveryMap from "./admin/AdminDeliveryMap";
+import AdminProducts from "./admin/AdminProducts";
 import ConfirmationDialog from "./components/ConfirmationDialog";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 
@@ -148,6 +149,7 @@ function App() {
           }
         >
           <Route path="orders" element={<AdminOrders />} />
+          <Route path="products" element={<AdminProducts />} />
           <Route path="customers" element={<AdminCustomers />} />
           <Route path="delivery" element={<AdminDeliveryMap />} />
           <Route index element={<Navigate to="orders" />} />
