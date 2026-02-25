@@ -214,51 +214,62 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess }) {
               position: 'relative',
               cursor: 'pointer',
               userSelect: 'none',
-              border: '1px solid #e5e7eb'
-            }} onClick={() => setPaymentMethod(paymentMethod === 'card' ? 'cod' : 'card')}>
+              border: '1px solid #e5e7eb',
+              overflow: 'hidden'
+            }}>
               {/* Sliding Highlight */}
               <div style={{
                 position: 'absolute',
                 top: '4px',
-                left: paymentMethod === 'card' ? '4px' : '50%',
-                width: 'calc(50% - 4px)',
+                left: paymentMethod === 'card' ? '4px' : 'calc(50% + 2px)',
+                width: 'calc(50% - 6px)',
                 height: 'calc(100% - 8px)',
                 backgroundColor: 'white',
                 borderRadius: '2rem',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 zIndex: 1
               }}></div>
 
-              <div style={{
-                padding: '12px 28px',
-                borderRadius: '2rem',
-                zIndex: 2,
-                color: paymentMethod === 'card' ? '#2563eb' : '#6b7280',
-                fontWeight: paymentMethod === 'card' ? 700 : 500,
-                transition: 'all 0.3s',
-                minWidth: '160px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}>
-                <span style={{ fontSize: '1.2rem' }}>💳</span> Pay by Card
+              <div
+                onClick={() => setPaymentMethod('card')}
+                style={{
+                  padding: '12px 20px',
+                  borderRadius: '2rem',
+                  zIndex: 2,
+                  color: paymentMethod === 'card' ? '#2563eb' : '#6b7280',
+                  fontWeight: paymentMethod === 'card' ? 700 : 500,
+                  transition: 'all 0.3s',
+                  minWidth: window.innerWidth < 480 ? '120px' : '150px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  position: 'relative'
+                }}
+              >
+                <span style={{ fontSize: '1.1rem' }}>💳</span>
+                <span style={{ fontSize: window.innerWidth < 480 ? '0.85rem' : '1rem' }}>Pay by Card</span>
               </div>
-              <div style={{
-                padding: '12px 28px',
-                borderRadius: '2rem',
-                zIndex: 2,
-                color: paymentMethod === 'cod' ? '#059669' : '#6b7280',
-                fontWeight: paymentMethod === 'cod' ? 700 : 500,
-                transition: 'all 0.3s',
-                minWidth: '160px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}>
-                <span style={{ marginLeft: '10px', fontSize: '1.2rem' }}>💵</span> Cash on Delivery
+              <div
+                onClick={() => setPaymentMethod('cod')}
+                style={{
+                  padding: '12px 20px',
+                  borderRadius: '2rem',
+                  zIndex: 2,
+                  color: paymentMethod === 'cod' ? '#059669' : '#6b7280',
+                  fontWeight: paymentMethod === 'cod' ? 700 : 500,
+                  transition: 'all 0.3s',
+                  minWidth: window.innerWidth < 480 ? '120px' : '150px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  position: 'relative'
+                }}
+              >
+                <span style={{ fontSize: '1.1rem' }}>💵</span>
+                <span style={{ fontSize: window.innerWidth < 480 ? '0.85rem' : '1rem' }}>COD</span>
               </div>
             </div>
           </div>
@@ -316,16 +327,39 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess }) {
           {paymentMethod === 'card' && (
             <div className="form-group">
               <label>Card Details</label>
-              <div className="card-element-container">
-                <CardElement className="card-element" />
+              <div className="card-element-container" style={{
+                padding: '12px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                backgroundColor: '#fff',
+                marginTop: '0.5rem'
+              }}>
+                <CardElement
+                  className="card-element"
+                  options={{
+                    style: {
+                      base: {
+                        fontSize: '16px',
+                        color: '#424770',
+                        '::placeholder': { color: '#aab7c4' },
+                      },
+                      invalid: { color: '#9e2146' },
+                    },
+                  }}
+                />
               </div>
+              {!stripe && <p style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '0.5rem' }}>⌛ Loading payment security...</p>}
             </div>
           )}
 
           <button type="submit" disabled={loading || (paymentMethod === 'card' && !stripe)} className="pay-button" style={{
-            backgroundColor: paymentMethod === 'cod' ? '#10b981' : undefined
+            backgroundColor: paymentMethod === 'cod' ? '#10b981' : undefined,
+            opacity: (paymentMethod === 'card' && !stripe) ? 0.7 : 1,
+            cursor: (paymentMethod === 'card' && !stripe) ? 'not-allowed' : 'pointer'
           }}>
-            {loading ? "Processing..." : (paymentMethod === 'cod' ? "Submit Order" : `Pay £${total}`)}
+            {loading ? "Processing..." :
+              (paymentMethod === 'card' && !stripe) ? "Initialising..." :
+                (paymentMethod === 'cod' ? "Submit Order" : `Pay £${total}`)}
           </button>
           {message && <p className="payment-message">{message}</p>}
         </form>

@@ -22,7 +22,7 @@ export default function PaymentPage({ total, cart, onPaymentSuccess }) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '2rem',
+      padding: window.innerWidth < 640 ? '1rem' : '2rem',
       boxSizing: 'border-box',
       position: 'relative'
     }}>
@@ -30,31 +30,40 @@ export default function PaymentPage({ total, cart, onPaymentSuccess }) {
         onClick={() => navigate('/cart')}
         style={{
           position: 'absolute',
-          top: '20px',
-          left: '20px',
-          padding: '10px 20px',
+          top: window.innerWidth < 640 ? '10px' : '20px',
+          left: window.innerWidth < 640 ? '10px' : '20px',
+          padding: '8px 16px',
           backgroundColor: '#4b5563',
           color: 'white',
           border: 'none',
           borderRadius: '5px',
           cursor: 'pointer',
           fontWeight: 'bold',
-          zIndex: 10
+          zIndex: 10,
+          fontSize: '0.8rem'
         }}
       >
-        ← Back to Cart
+        ← Back
       </button>
-      <div className="payment-card" style={{
+      <div className="payment-page-card" style={{
         backgroundColor: 'white',
-        padding: '2rem',
+        padding: window.innerWidth < 640 ? '1.5rem 1rem' : '2rem',
         borderRadius: '1rem',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
         maxWidth: '1000px',
         width: '100%',
-        margin: '0 auto'
+        margin: '0 auto',
+        marginTop: window.innerWidth < 640 ? '50px' : '0'
       }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '2rem', fontSize: '2rem', color: '#1f2937' }}>💳 Secure Payment</h2>
-        <p style={{ marginBottom: '20px', textAlign: 'center', fontSize: '1.2rem' }}>Total Amount: <strong style={{ color: '#10b981' }}>£{total}</strong></p>
+        <h2 style={{
+          textAlign: 'center',
+          marginBottom: '1.5rem',
+          fontSize: window.innerWidth < 640 ? '1.5rem' : '2rem',
+          color: '#1f2937'
+        }}>💳 Secure Payment</h2>
+        <p style={{ marginBottom: '20px', textAlign: 'center', fontSize: window.innerWidth < 640 ? '1rem' : '1.2rem' }}>
+          Total Amount: <strong style={{ color: '#10b981' }}>£{total}</strong>
+        </p>
         <Elements stripe={stripePromise}>
           <CheckoutForm total={total} cart={cart} onPaymentSuccess={onPaymentSuccess} />
         </Elements>

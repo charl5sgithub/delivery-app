@@ -157,6 +157,7 @@
   display: flex;
   gap: 3rem;
   align-items: flex-start;
+  width: 100%;
 }
 
 .checkout-visual-side {
@@ -165,20 +166,42 @@
   align-items: center;
   justify-content: center;
   margin-top: 2rem;
+  min-width: 320px;
 }
 
 .checkout-form-side {
   flex: 1.5;
+  width: 100%;
 }
 
 @media (max-width: 850px) {
   .checkout-layout {
     flex-direction: column;
     align-items: center;
+    gap: 1.5rem;
   }
 
   .checkout-visual-side {
-    margin-bottom: 2rem;
+    margin-bottom: 3rem;
+    margin-top: 1rem;
+    transform: scale(0.85);
+    /* Scale down the card stack on mobile */
+  }
+
+  .checkout-form-side {
+    flex: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .checkout-visual-side {
+    transform: scale(0.75);
+    margin-bottom: 1rem;
+    min-width: unset;
+  }
+
+  .credit-card-container {
+    width: 280px;
   }
 }
 
