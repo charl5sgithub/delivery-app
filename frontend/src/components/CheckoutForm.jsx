@@ -67,8 +67,8 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess }) {
     e.preventDefault();
     console.log("Submit triggered. Payment Method:", paymentMethod);
 
-    if (!stripe || !elements) {
-      console.warn("Stripe or Elements not loaded.");
+    if (paymentMethod === 'card' && (!stripe || !elements)) {
+      console.warn("Stripe or Elements not loaded for card payment.");
       return;
     }
 
