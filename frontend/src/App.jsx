@@ -16,7 +16,7 @@ import AdminProducts from "./admin/AdminProducts";
 import ConfirmationDialog from "./components/ConfirmationDialog";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 
-import "./App.css";
+import "./app.css";
 
 function App() {
   const { user, isAdmin, authLoading } = useAuth();
