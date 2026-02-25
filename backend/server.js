@@ -11,8 +11,28 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173"
+  origin: (origin, callback) => {
+    // 1. Define allowed origins (Local + Production)
+    const allowed = [
+      "http://localhost:5173",
+      process.env.FRONTEND_URL?.replace(/\/$/, "")
+    ].filter(Boolean);
+
+    // 2. Log for Vercel Dashboard debugging
+    console.log("CORS Check - Incoming Origin:", origin);
+    console.log("CORS Check - Static Allowed:", allowed);
+
+    // 3. Robust condition: Exact match OR any Vercel subdomain (for branch/preview URLs)
+    if (!origin || allowed.includes(origin) || origin.endsWith(".vercel.app")) {
+      callback(null, true);
+    } else {
+      console.error("CORS BLOCKED:", origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
 }));
+
 app.use(express.json());
 
 app.use('/api/items', itemsRouter);
