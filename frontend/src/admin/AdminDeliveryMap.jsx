@@ -31,7 +31,7 @@ const driverIcon = new L.Icon({
     iconAnchor: [20, 20],
 });
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
 
 // Component to handle map center updates
 function MapRefresher({ center }) {

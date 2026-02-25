@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
 const fmt = (n) => `£${Number(n ?? 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
