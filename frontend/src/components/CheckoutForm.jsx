@@ -95,7 +95,7 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess }) {
       }
 
       // 2. Send Order to Backend
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
       const response = await fetch(`${API_URL}/api/orders/checkout`, {
         method: "POST",
         headers: {
