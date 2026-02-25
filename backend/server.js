@@ -11,7 +11,7 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: "http://localhost:5173"  // frontend URL
+  origin: process.env.FRONTEND_URL || "http://localhost:5173"
 }));
 app.use(express.json());
 
@@ -21,5 +21,10 @@ app.use('/api/payments', paymentsRouter);
 app.use('/api/customers', customersRouter);
 app.use('/api/delivery', deliveryRouter);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+// Export for Vercel
+export default app;
+
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+}
