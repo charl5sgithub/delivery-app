@@ -8,20 +8,32 @@ const router = express.Router();
 // Checkout endpoint - Create Customer -> Address -> Order -> Order Items -> Payment
 router.post("/checkout", async (req, res) => {
   const { name, email, phone, address, items, total, paymentMethod, latitude, longitude } = req.body;
+
+  console.log("--- New Checkout Request ---");
+  console.log("Method:", paymentMethod);
+  console.log("Name:", name);
+  console.log("Total:", total);
+  console.log("Items Count:", items?.length);
+
   const isCOD = paymentMethod === 'cod';
 
   try {
     // 1. Create or Find Customer
-    // Upsert to avoid duplicates
+    console.log("1. Upserting Customer...");
     const { data: customer, error: custError } = await supabase
       .from("customers")
       .upsert([{ name, email, phone }], { onConflict: 'email' })
       .select("customer_id")
       .single();
 
-    if (custError) throw new Error(`Customer Error: ${custError.message}`);
+    if (custError) {
+      console.error("Customer Error!", custError);
+      throw new Error(`Customer Error: ${custError.message}`);
+    }
+    console.log("Customer found/created ID:", customer.customer_id);
 
     // 2. Create Address
+    console.log("2. Inserting Address...");
     const { data: addr, error: addrError } = await supabase
       .from("addresses")
       .insert([{
@@ -35,9 +47,14 @@ router.post("/checkout", async (req, res) => {
       .select("address_id")
       .single();
 
-    if (addrError) throw new Error(`Address Error: ${addrError.message}`);
+    if (addrError) {
+      console.error("Address Error!", addrError);
+      throw new Error(`Address Error: ${addrError.message}`);
+    }
+    console.log("Address ID:", addr.address_id);
 
     // 3. Create Order
+    console.log("3. Creating Order...");
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert([{
@@ -49,10 +66,15 @@ router.post("/checkout", async (req, res) => {
       .select("order_id")
       .single();
 
-    if (orderError) throw new Error(`Order Error: ${orderError.message}`);
+    if (orderError) {
+      console.error("Order Error!", orderError);
+      throw new Error(`Order Error: ${orderError.message}`);
+    }
+    console.log("Order ID:", order.order_id);
 
     // 4. Insert Order Items
-    const orderItemsData = items.map(item => ({
+    console.log(`4. Inserting ${items?.length} items...`);
+    const orderItemsData = (items || []).map(item => ({
       order_id: order.order_id,
       item_id: item.id,
       quantity: item.quantity,
@@ -63,9 +85,13 @@ router.post("/checkout", async (req, res) => {
       .from("order_items")
       .insert(orderItemsData);
 
-    if (itemsError) throw new Error(`Order Items Error: ${itemsError.message}`);
+    if (itemsError) {
+      console.error("Order Items Error!", itemsError);
+      throw new Error(`Order Items Error: ${itemsError.message}`);
+    }
 
     // 5. Create Payment Record
+    console.log("5. Creating Payment Record...");
     const { error: payError } = await supabase
       .from("payments")
       .insert([{
@@ -76,12 +102,16 @@ router.post("/checkout", async (req, res) => {
         transaction_id: isCOD ? `cod_${Date.now()}` : `sim_${Date.now()}`
       }]);
 
-    if (payError) throw new Error(`Payment Error: ${payError.message}`);
+    if (payError) {
+      console.error("Payment Error!", payError);
+      throw new Error(`Payment Error: ${payError.message}`);
+    }
 
+    console.log("Order SUCCESS!");
     res.json({ success: true, orderId: order.order_id, message: "Order placed successfully!" });
 
   } catch (error) {
-    console.error("Checkout Error:", error);
+    console.error("Checkout Catch Block:", error.message);
     res.status(500).json({ error: error.message });
   }
 });

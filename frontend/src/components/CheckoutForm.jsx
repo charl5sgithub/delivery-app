@@ -65,7 +65,12 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!stripe || !elements) return;
+    console.log("Submit triggered. Payment Method:", paymentMethod);
+
+    if (!stripe || !elements) {
+      console.warn("Stripe or Elements not loaded.");
+      return;
+    }
 
     setLoading(true);
     setMessage("");
@@ -74,6 +79,7 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess }) {
       let paymentMethodId = null;
 
       if (paymentMethod === 'card') {
+        console.log("Creating Stripe Payment Method...");
         // 1. Create Stripe Payment Method
         const { error: stripeError, paymentMethod: stripePaymentMethod } = await stripe.createPaymentMethod({
           type: 'card',
@@ -89,13 +95,18 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess }) {
         });
 
         if (stripeError) {
+          console.error("Stripe Error:", stripeError);
           throw new Error(stripeError.message);
         }
         paymentMethodId = stripePaymentMethod.id;
+        console.log("Stripe Payment Method created:", paymentMethodId);
       }
 
       // 2. Send Order to Backend
-      const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
+      const rawApiUrl = import.meta.env.VITE_API_URL;
+      const API_URL = rawApiUrl?.replace(/\/$/, "");
+      console.log("Targeting API URL:", API_URL);
+
       const response = await fetch(`${API_URL}/api/orders/checkout`, {
         method: "POST",
         headers: {
@@ -110,7 +121,9 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess }) {
         }),
       });
 
+      console.log("API Response Status:", response.status);
       const data = await response.json();
+      console.log("API Response Data:", data);
 
       if (!response.ok) {
         throw new Error(data.error || "Order placement failed");
@@ -124,7 +137,7 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess }) {
       }, 1000);
 
     } catch (error) {
-      console.error(error);
+      console.error("Submission Catch Error:", error);
       setMessage("❌ Payment failed: " + error.message);
       setLoading(false);
     }
