@@ -68,19 +68,21 @@ export default function DeliveryBanner() {
           align-items: center;
           justify-content: center;
           gap: 12px;
-          background: linear-gradient(90deg, #1e2e24 0%, #2E4236 50%, #1e2e24 100%);
-          color: #fff;
-          padding: 11px 20px;
-          font-size: 0.9rem;
-          font-weight: 600;
+          background: linear-gradient(90deg, #F59E0B 0%, #FF8C42 100%);
+          color: #1a1a1a;
+          padding: 12px 20px;
+          font-size: 0.95rem;
+          font-weight: 700;
           letter-spacing: 0.01em;
           position: relative;
           animation: bannerSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
           z-index: 100;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+          box-shadow: 0 4px 15px rgba(255, 140, 66, 0.3);
+          border-radius: 0 0 12px 12px;
+          margin: 0 10px;
         }
         .delivery-banner .banner-icon {
-          font-size: 1.1rem;
+          font-size: 1.2rem;
           flex-shrink: 0;
         }
         .delivery-banner .banner-text {
@@ -88,34 +90,36 @@ export default function DeliveryBanner() {
           line-height: 1.4;
         }
         .delivery-banner .banner-date {
-          background: rgba(255,255,255,0.2);
+          background: rgba(0, 0, 0, 0.1);
           border-radius: 6px;
-          padding: 1px 8px;
+          padding: 2px 8px;
           font-variant-numeric: tabular-nums;
           white-space: nowrap;
+          border: 1px solid rgba(0, 0, 0, 0.05);
         }
         .delivery-banner .banner-dismiss {
           position: absolute;
           right: 14px;
           top: 50%;
           transform: translateY(-50%);
-          background: rgba(255,255,255,0.15);
+          background: rgba(0, 0, 0, 0.1);
           border: none;
-          color: #fff;
-          width: 26px;
-          height: 26px;
+          color: #1a1a1a;
+          width: 28px;
+          height: 28px;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          font-size: 1rem;
+          font-size: 1.1rem;
           line-height: 1;
-          transition: background 0.2s;
+          transition: background 0.2s, transform 0.2s;
           flex-shrink: 0;
         }
         .delivery-banner .banner-dismiss:hover {
-          background: rgba(255,255,255,0.3);
+          background: rgba(0, 0, 0, 0.2);
+          transform: translateY(-50%) scale(1.1);
         }
         @media (max-width: 600px) {
           .delivery-banner { font-size: 0.78rem; padding: 10px 40px 10px 12px; }

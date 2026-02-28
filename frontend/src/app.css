@@ -278,12 +278,19 @@ body {
   margin: 0;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .cart-toggle,
 .admin-btn {
   background-color: var(--secondary-color);
   color: var(--white);
-  border: none;
-  padding: 0.6rem 1.5rem;
+  border: 1px solid transparent;
+  padding: 0 1.5rem;
+  height: 44px;
   border-radius: var(--radius-sm);
   font-weight: 600;
   font-size: 0.95rem;
@@ -294,6 +301,21 @@ body {
   justify-content: center;
   text-decoration: none;
   box-shadow: 0 2px 8px rgba(111, 142, 82, 0.35);
+  box-sizing: border-box;
+}
+
+.cart-icon,
+.admin-icon {
+  margin-right: 10px;
+  flex-shrink: 0;
+  opacity: 0.95;
+  transition: transform 0.25s ease;
+}
+
+.cart-toggle:hover .cart-icon,
+.admin-btn:hover .admin-icon {
+  transform: scale(1.1);
+  opacity: 1;
 }
 
 .cart-toggle:hover {
@@ -305,7 +327,8 @@ body {
 .admin-btn {
   background-color: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  margin-right: 12px;
+  margin-right: 0;
+  /* Handled by gap in header-right */
 }
 
 .admin-btn:hover {
