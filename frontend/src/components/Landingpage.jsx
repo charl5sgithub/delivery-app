@@ -413,20 +413,57 @@ export default function LandingPage({ onAddToCart }) {
         .lp2-section-header {
           text-align: center; margin-bottom: 3rem;
         }
+        @keyframes lp-border-draw {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes lp-glow-pulse {
+          0%, 100% { box-shadow: 0 0 5px rgba(111, 142, 82, 0.2); }
+          50% { box-shadow: 0 0 15px rgba(163, 230, 53, 0.4); }
+        }
+
         .lp2-section-tag {
           display: inline-block;
-          padding: 6px 14px;
-          background: rgba(111, 142, 82, 0.12);
-          border: 1px solid rgba(111, 142, 82, 0.3);
+          padding: 7px 16px;
+          background: #fff;
+          border: 1px solid transparent;
           border-radius: 99px;
-          color: var(--lp-lime);
-          font-size: 0.85rem; font-weight: 800; letter-spacing: 0.08em;
+          color: var(--lp-green);
+          font-size: 0.82rem; font-weight: 800; letter-spacing: 0.08em;
           text-transform: uppercase; margin-bottom: 0.8rem;
+          position: relative;
+          z-index: 1;
+          overflow: hidden;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+          animation: lp-glow-pulse 3s infinite ease-in-out;
         }
+        .lp2-section-tag::before {
+          content: "";
+          position: absolute; inset: -2px;
+          z-index: -1;
+          background: linear-gradient(90deg, #6F8E52, #A3E635, #6F8E52, #A3E635);
+          background-size: 300% 100%;
+          animation: lp-border-draw 4s linear infinite;
+          border-radius: 99px;
+        }
+        .lp2-section-tag::after {
+          content: "";
+          position: absolute; inset: 1.5px;
+          background: #fff;
+          border-radius: 99px;
+          z-index: -1;
+        }
+
         .lp2-why .lp2-section-tag {
-          background: rgba(255, 255, 255, 0.1);
-          border-color: rgba(255, 255, 255, 0.3);
           color: #fff;
+        }
+        .lp2-why .lp2-section-tag::after {
+          background: #2E4236;
+        }
+        .lp2-why .lp2-section-tag::before {
+          background: linear-gradient(90deg, #6F8E52, #ffffff, #6F8E52, #ffffff);
+          background-size: 300% 100%;
         }
         .lp2-section-title {
           font-size: clamp(1.6rem, 3.5vw, 2.5rem);
