@@ -5,17 +5,17 @@ import React, { useState, useEffect } from "react";
  * using Intl.DateTimeFormat to handle GMT/BST automatically.
  */
 function getUKDayOfWeek() {
-    const now = new Date();
-    // 'en-GB' with timeZone gives us the day name in the UK timezone
-    const dayName = new Intl.DateTimeFormat("en-GB", {
-        timeZone: "Europe/London",
-        weekday: "long",
-    }).format(now);
-    const map = {
-        Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3,
-        Thursday: 4, Friday: 5, Saturday: 6,
-    };
-    return map[dayName] ?? now.getDay();
+  const now = new Date();
+  // 'en-GB' with timeZone gives us the day name in the UK timezone
+  const dayName = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    weekday: "long",
+  }).format(now);
+  const map = {
+    Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3,
+    Thursday: 4, Friday: 5, Saturday: 6,
+  };
+  return map[dayName] ?? now.getDay();
 }
 
 /**
@@ -23,42 +23,42 @@ function getUKDayOfWeek() {
  * formatted as DD/MM/YYYY.
  */
 function getNextWednesdayUK() {
-    // Work in UTC-adjusted ms, then format in London time
-    const now = new Date();
+  // Work in UTC-adjusted ms, then format in London time
+  const now = new Date();
 
-    // Find how many days until next Wednesday (day 3)
-    const ukDow = getUKDayOfWeek(); // 0-6
-    const daysUntilWed = ukDow === 3 ? 7 : (3 - ukDow + 7) % 7 || 7;
+  // Find how many days until next Wednesday (day 3)
+  const ukDow = getUKDayOfWeek(); // 0-6
+  const daysUntilWed = ukDow === 3 ? 7 : (3 - ukDow + 7) % 7 || 7;
 
-    const nextWed = new Date(now);
-    nextWed.setDate(now.getDate() + daysUntilWed);
+  const nextWed = new Date(now);
+  nextWed.setDate(now.getDate() + daysUntilWed);
 
-    return new Intl.DateTimeFormat("en-GB", {
-        timeZone: "Europe/London",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-    }).format(nextWed);
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(nextWed);
 }
 
 export default function DeliveryBanner() {
-    const [visible, setVisible] = useState(false);
-    const [nextWed, setNextWed] = useState("");
+  const [visible, setVisible] = useState(false);
+  const [nextWed, setNextWed] = useState("");
 
-    useEffect(() => {
-        const dow = getUKDayOfWeek();
-        // Show on Thursday (4), Friday (5), Saturday (6)
-        if (dow === 4 || dow === 5 || dow === 6) {
-            setNextWed(getNextWednesdayUK());
-            setVisible(true);
-        }
-    }, []);
+  useEffect(() => {
+    const dow = getUKDayOfWeek();
+    // Show on Thursday (4), Friday (5), Saturday (6)
+    if (dow === 4 || dow === 5 || dow === 6) {
+      setNextWed(getNextWednesdayUK());
+      setVisible(true);
+    }
+  }, []);
 
-    if (!visible) return null;
+  if (!visible) return null;
 
-    return (
-        <>
-            <style>{`
+  return (
+    <>
+      <style>{`
         @keyframes bannerSlideDown {
           from { transform: translateY(-100%); opacity: 0; }
           to   { transform: translateY(0);    opacity: 1; }
@@ -68,7 +68,7 @@ export default function DeliveryBanner() {
           align-items: center;
           justify-content: center;
           gap: 12px;
-          background: linear-gradient(90deg, #064e3b 0%, #065f46 50%, #064e3b 100%);
+          background: linear-gradient(90deg, #1e2e24 0%, #2E4236 50%, #1e2e24 100%);
           color: #fff;
           padding: 11px 20px;
           font-size: 0.9rem;
@@ -122,21 +122,21 @@ export default function DeliveryBanner() {
         }
       `}</style>
 
-            <div className="delivery-banner" role="status" aria-live="polite">
-                <span className="banner-icon">🚚</span>
-                <span className="banner-text">
-                    Order Today for Next Wednesday Delivery —&nbsp;
-                    <span className="banner-date">{nextWed}</span>
-                </span>
-                <button
-                    className="banner-dismiss"
-                    onClick={() => setVisible(false)}
-                    aria-label="Dismiss delivery reminder"
-                    title="Dismiss"
-                >
-                    ×
-                </button>
-            </div>
-        </>
-    );
+      <div className="delivery-banner" role="status" aria-live="polite">
+        <span className="banner-icon">🚚</span>
+        <span className="banner-text">
+          Order Today for Next Wednesday Delivery —&nbsp;
+          <span className="banner-date">{nextWed}</span>
+        </span>
+        <button
+          className="banner-dismiss"
+          onClick={() => setVisible(false)}
+          aria-label="Dismiss delivery reminder"
+          title="Dismiss"
+        >
+          ×
+        </button>
+      </div>
+    </>
+  );
 }
