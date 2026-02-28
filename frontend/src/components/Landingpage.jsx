@@ -142,13 +142,11 @@ export default function LandingPage({ onAddToCart }) {
 
         /* ── CSS Custom Properties ── */
         :root {
-          --lp-green:   #2ecc71;
-          --lp-green-d: #27ae60;
-          --lp-lime:    #a3e635;
-          --lp-cream:   #f8f4e6;
-          --lp-charcoal:#333333;
-          --lp-tomato:  #ff6347;
-          --lp-orange:  #ff8c42;
+          --lp-green:   #2E4236;
+          --lp-green-d: #1e2e24;
+          --lp-lime:    #6F8E52;
+          --lp-cream:   #EAE2D5;
+          --lp-charcoal:#2E4236;
           --lp-white:   #ffffff;
           --lp-r12:     12px;
           --lp-r16:     16px;
@@ -201,7 +199,7 @@ export default function LandingPage({ onAddToCart }) {
         .lp2-hero {
           position: relative;
           min-height: 100vh;
-          background: linear-gradient(135deg, #0a2e1a 0%, #0d3d22 40%, #0f4c2b 70%, #1a6b3c 100%);
+          background: linear-gradient(135deg, #2E4236 0%, #3d5947 40%, #4a6b57 70%, #6F8E52 100%);
           display: flex;
           align-items: center;
           overflow: hidden;
@@ -218,13 +216,13 @@ export default function LandingPage({ onAddToCart }) {
         }
         .lp2-hero-blob-1 {
           width: 520px; height: 520px;
-          background: radial-gradient(circle, rgba(46,204,113,0.18) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(111,142,82,0.18) 0%, transparent 70%);
           top: -120px; right: -80px;
           animation-delay: 0s;
         }
         .lp2-hero-blob-2 {
           width: 380px; height: 380px;
-          background: radial-gradient(circle, rgba(163,230,53,0.12) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(46,66,54,0.12) 0%, transparent 70%);
           bottom: -80px; left: -60px;
           animation-delay: -3s;
         }
@@ -254,12 +252,12 @@ export default function LandingPage({ onAddToCart }) {
 
         .lp2-hero-badge {
           display: inline-flex; align-items: center; gap: 8px;
-          background: rgba(46,204,113,0.15);
-          border: 1px solid rgba(46,204,113,0.3);
+          background: rgba(111,142,82,0.15);
+          border: 1px solid rgba(111,142,82,0.3);
           border-radius: 99px;
           padding: 6px 16px;
           font-size: 0.82rem; font-weight: 600;
-          color: var(--lp-lime);
+          color: #fff;
           letter-spacing: 0.06em; text-transform: uppercase;
           margin-bottom: 1.5rem;
           animation: lp-badge-pop 0.6s cubic-bezier(0.16,1,0.3,1) 0.4s both;
@@ -280,7 +278,7 @@ export default function LandingPage({ onAddToCart }) {
           letter-spacing: -0.02em;
         }
         .lp2-hero-title .lp2-hl {
-          background: linear-gradient(90deg, var(--lp-green) 0%, var(--lp-lime) 100%);
+          background: linear-gradient(90deg, #fff 0%, var(--lp-lime) 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -298,18 +296,18 @@ export default function LandingPage({ onAddToCart }) {
         }
         .lp2-btn-primary {
           display: inline-flex; align-items: center; gap: 8px;
-          background: linear-gradient(135deg, var(--lp-green) 0%, var(--lp-green-d) 100%);
+          background: linear-gradient(135deg, var(--lp-lime) 0%, var(--lp-green) 100%);
           color: #fff; border: none;
           padding: 1rem 2rem; border-radius: 14px;
           font-size: 1rem; font-weight: 700;
           cursor: pointer; transition: all 0.25s ease;
-          box-shadow: 0 8px 24px rgba(46,204,113,0.4);
+          box-shadow: 0 8px 24px rgba(46, 66, 54, 0.4);
           letter-spacing: 0.01em;
         }
         .lp2-btn-primary:hover {
           transform: translateY(-3px);
-          box-shadow: 0 14px 32px rgba(46,204,113,0.5);
-          background: linear-gradient(135deg, #34d978 0%, var(--lp-green) 100%);
+          box-shadow: 0 14px 32px rgba(46, 66, 54, 0.5);
+          background: linear-gradient(135deg, var(--lp-lime) 0%, #5a7542 100%);
         }
         .lp2-btn-primary:active { transform: translateY(0); }
 
@@ -369,7 +367,7 @@ export default function LandingPage({ onAddToCart }) {
         }
         .lp2-hero-img-glow {
           position: absolute; inset: -20px;
-          background: radial-gradient(ellipse, rgba(46,204,113,0.35) 0%, transparent 70%);
+          background: radial-gradient(ellipse, rgba(111,142,82,0.35) 0%, transparent 70%);
           border-radius: 50%; filter: blur(24px);
           animation: lp-float 6s ease-in-out infinite;
         }
@@ -377,7 +375,7 @@ export default function LandingPage({ onAddToCart }) {
           width: 100%; aspect-ratio: 1;
           object-fit: cover;
           border-radius: 40% 60% 60% 40% / 50% 50% 60% 40%;
-          box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 2px rgba(46,204,113,0.3);
+          box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 2px rgba(111,142,82,0.3);
           animation: lp-float 6s ease-in-out infinite;
           position: relative; z-index: 1;
         }
@@ -594,7 +592,7 @@ export default function LandingPage({ onAddToCart }) {
         ═══════════════════════════════════════════════════════════════ */
         .lp2-why {
           padding: 80px 2rem;
-          background: linear-gradient(135deg, #0a2e1a 0%, #0d3d22 100%);
+          background: linear-gradient(135deg, #2E4236 0%, #1e2e24 100%);
           position: relative; overflow: hidden;
         }
         .lp2-why::before {
@@ -643,7 +641,7 @@ export default function LandingPage({ onAddToCart }) {
         ═══════════════════════════════════════════════════════════════ */
         .lp2-cta-banner {
           padding: 90px 2rem;
-          background: linear-gradient(135deg, #ff6347 0%, #ff8c42 50%, #f59e0b 100%);
+          background: linear-gradient(135deg, #2E4236 0%, #6F8E52 100%);
           text-align: center;
           position: relative; overflow: hidden;
         }
@@ -674,7 +672,7 @@ export default function LandingPage({ onAddToCart }) {
         }
         .lp2-btn-cta {
           display: inline-flex; align-items: center; gap: 10px;
-          background: #fff; color: var(--lp-tomato);
+          background: #fff; color: var(--lp-green);
           border: none; padding: 1.1rem 2.6rem; border-radius: 16px;
           font-size: 1.05rem; font-weight: 800;
           cursor: pointer; transition: all 0.25s ease;
@@ -690,7 +688,7 @@ export default function LandingPage({ onAddToCart }) {
            FOOTER
         ═══════════════════════════════════════════════════════════════ */
         .lp2-footer {
-          background: #0a2e1a; color: #fff;
+          background: #1e2e24; color: #fff;
           padding: 60px 2rem 30px;
         }
         .lp2-footer-grid {
@@ -799,8 +797,8 @@ export default function LandingPage({ onAddToCart }) {
                 ].map((t) => (
                   <span key={t} className="lp2-trust-chip">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <circle cx="7" cy="7" r="7" fill="#2ecc71" fillOpacity="0.2" />
-                      <path d="M4 7l2 2 4-4" stroke="#2ecc71" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="7" cy="7" r="7" fill="#6F8E52" fillOpacity="0.2" />
+                      <path d="M4 7l2 2 4-4" stroke="#6F8E52" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     {t}
                   </span>
