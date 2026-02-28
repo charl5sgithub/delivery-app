@@ -23,19 +23,20 @@ router.get("/export", exportCustomers);
 // Get role by email (used by AuthContext on login)
 router.get("/role-by-email", getRoleByEmail);
 
-// Get customer details
-router.get("/:id", getCustomerDetails);
+// ── IMPORTANT: specific sub-path routes MUST come before /:id ─────────────────
 
-// Get a single customer's role
+// Get / Update a single customer's role  (must be before GET /:id)
 router.get("/:id/role", getCustomerRole);
 
-// ── Protected routes (SuperUser & Admin only) ──────────────────────────────────
-
-// Update a customer's role
+// ── Protected routes (SuperUser & Admin only) ─────────────────────────────────
 router.patch(
     "/:id/role",
     requireRole(["SuperUser", "Admin"]),
     updateCustomerRole
 );
+
+// ── Catch-all customer detail route ──────────────────────────────────────────
+// Keep this LAST among /:id routes so sub-paths above are matched first
+router.get("/:id", getCustomerDetails);
 
 export default router;

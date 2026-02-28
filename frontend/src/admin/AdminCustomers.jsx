@@ -282,13 +282,17 @@ export default function AdminCustomers() {
             {/* ── Customer Details Modal ───────────────────────────────────── */}
             <div
                 className={`modal-overlay ${modalOpen ? 'open' : ''}`}
-                onClick={(e) => { if (e.target.className.includes('modal-overlay')) closeModal(); }}
+                onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
             >
                 <div className="modal-content">
                     <button className="close-modal" onClick={closeModal}>×</button>
 
                     {detailsLoading || !selectedCustomer ? (
                         <div style={{ textAlign: 'center', padding: '2rem' }}>Loading Details…</div>
+                    ) : selectedCustomer.error ? (
+                        <div style={{ textAlign: 'center', padding: '2rem', color: '#ef4444' }}>
+                            Error loading details: {selectedCustomer.error}
+                        </div>
                     ) : (
                         <>
                             <div className="modal-header">
@@ -331,7 +335,7 @@ export default function AdminCustomers() {
                                         selectedCustomer.orders.map((order) => (
                                             <div className="item-row" key={order.order_id}>
                                                 <div className="item-name">
-                                                    #{order.order_id.substring(0, 8)}…
+                                                    #{String(order.order_id).substring(0, 8)}…
                                                     <span>{new Date(order.created_at).toLocaleDateString()}</span>
                                                 </div>
                                                 <div className="item-price" style={{ textAlign: 'right' }}>

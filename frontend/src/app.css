@@ -1472,3 +1472,148 @@ body {
   color: var(--white);
   border-color: var(--primary-color);
 }
+
+/* ── Mobile Responsiveness ── */
+@media (max-width: 768px) {
+
+  /* Header adjustments */
+  .app-header {
+    padding: 1rem;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .header-left {
+    width: 100%;
+  }
+
+  .app-header h1 {
+    font-size: 1.25rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .header-right {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .admin-btn,
+  .cart-toggle {
+    margin: 0;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  /* Admin Layout */
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    overflow-x: auto;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+
+  .sidebar-header {
+    display: none;
+    /* Hide or make it smaller */
+  }
+
+  .sidebar-menu {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+  }
+
+  .sidebar-menu li {
+    padding: 10px 15px;
+    border-bottom: none;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+  }
+
+  .sidebar-menu li.active {
+    border-left: none;
+    border-bottom-color: #10b981;
+  }
+
+  .admin-content {
+    padding: 10px;
+  }
+
+  /* Admin Header */
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .admin-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .admin-actions>* {
+    width: 100%;
+    margin-top: 5px;
+  }
+
+  form.admin-filter-bar {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .filter-group {
+    width: 100% !important;
+  }
+
+  .filter-group input,
+  .filter-group select {
+    width: 100% !important;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  /* Table Responsiveness */
+  .table-container {
+    overflow-x: auto;
+  }
+
+  .data-table {
+    min-width: 600px;
+  }
+
+  /* Modal Adjustments */
+  .modal-content {
+    padding: 1.5rem;
+    max-width: 95%;
+    margin: 10px;
+  }
+
+  .modal-header h3 {
+    font-size: 1.25rem;
+  }
+
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .detail-value {
+    text-align: left;
+  }
+}
