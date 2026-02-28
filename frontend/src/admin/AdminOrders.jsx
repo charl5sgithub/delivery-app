@@ -462,7 +462,7 @@ export default function AdminOrders() {
             </div>
 
             {/* ── Order Details Modal ──────────────────────────────────────── */}
-            <div className={`modal-overlay ${modalOpen ? 'open' : ''}`} onClick={e => { if (e.target.className.includes('modal-overlay')) closeModal(); }}>
+            <div className={`modal-overlay ${modalOpen ? 'open' : ''}`} onClick={e => { if (e.target === e.currentTarget) closeModal(); }}>
                 <div className="modal-content">
                     <button className="close-modal" onClick={closeModal}>×</button>
                     {detailsLoading ? (
