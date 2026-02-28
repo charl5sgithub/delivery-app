@@ -15,12 +15,15 @@ import AdminDeliveryMap from "./admin/AdminDeliveryMap";
 import AdminProducts from "./admin/AdminProducts";
 import ConfirmationDialog from "./components/ConfirmationDialog";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+import DeliveryBanner from "./components/DeliveryBanner";
 
 import "./app.css";
 
 function App() {
   const { user, isAdmin, authLoading } = useAuth();
   const [cart, setCart] = useState([]);
+  // grandTotal = subtotal + delivery fee, set by Cart on checkout
+  const [grandTotal, setGrandTotal] = useState(0);
   const [dialogConfig, setDialogConfig] = useState({
     isOpen: false, title: "", message: "", onConfirm: () => { }
   });
@@ -56,7 +59,11 @@ function App() {
     setCart((prev) => prev.filter((item) => item.id !== itemId));
   };
 
-  const handleCheckout = () => navigate("/payment");
+  // Cart passes the grand total (including delivery fee) when proceeding
+  const handleCheckout = (total) => {
+    setGrandTotal(total);
+    navigate("/payment");
+  };
 
   const handlePaymentSuccess = (method = "card") => {
     const isCOD = method === "cod";
@@ -76,7 +83,6 @@ function App() {
   };
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
     <div className="app-container">
@@ -86,6 +92,8 @@ function App() {
           path="/"
           element={
             <>
+              {/* Delivery reminder banner: visible Thu–Sat in UK timezone */}
+              <DeliveryBanner />
               <header className="app-header">
                 <div className="header-left">
                   <h1>Welcome, {user.displayName}</h1>
@@ -132,7 +140,7 @@ function App() {
           path="/payment"
           element={
             <PaymentPage
-              total={total}
+              total={grandTotal}
               cart={cart}
               onPaymentSuccess={handlePaymentSuccess}
             />
