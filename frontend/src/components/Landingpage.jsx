@@ -413,13 +413,57 @@ export default function LandingPage({ onAddToCart }) {
         .lp2-section-header {
           text-align: center; margin-bottom: 3rem;
         }
+        @keyframes lp-border-draw {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes lp-glow-pulse {
+          0%, 100% { box-shadow: 0 0 5px rgba(111, 142, 82, 0.2); }
+          50% { box-shadow: 0 0 15px rgba(163, 230, 53, 0.4); }
+        }
+
         .lp2-section-tag {
           display: inline-block;
-          background: linear-gradient(90deg, var(--lp-green), var(--lp-lime));
-          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-          background-clip: text;
-          font-size: 0.8rem; font-weight: 700; letter-spacing: 0.12em;
-          text-transform: uppercase; margin-bottom: 0.6rem;
+          padding: 7px 16px;
+          background: #fff;
+          border: 1px solid transparent;
+          border-radius: 99px;
+          color: var(--lp-green);
+          font-size: 0.82rem; font-weight: 800; letter-spacing: 0.08em;
+          text-transform: uppercase; margin-bottom: 0.8rem;
+          position: relative;
+          z-index: 1;
+          overflow: hidden;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+          animation: lp-glow-pulse 3s infinite ease-in-out;
+        }
+        .lp2-section-tag::before {
+          content: "";
+          position: absolute; inset: -2px;
+          z-index: -1;
+          background: linear-gradient(90deg, #6F8E52, #A3E635, #6F8E52, #A3E635);
+          background-size: 300% 100%;
+          animation: lp-border-draw 4s linear infinite;
+          border-radius: 99px;
+        }
+        .lp2-section-tag::after {
+          content: "";
+          position: absolute; inset: 1.5px;
+          background: #fff;
+          border-radius: 99px;
+          z-index: -1;
+        }
+
+        .lp2-why .lp2-section-tag {
+          color: #fff;
+        }
+        .lp2-why .lp2-section-tag::after {
+          background: #2E4236;
+        }
+        .lp2-why .lp2-section-tag::before {
+          background: linear-gradient(90deg, #6F8E52, #ffffff, #6F8E52, #ffffff);
+          background-size: 300% 100%;
         }
         .lp2-section-title {
           font-size: clamp(1.6rem, 3.5vw, 2.5rem);
@@ -562,19 +606,26 @@ export default function LandingPage({ onAddToCart }) {
 
         .lp2-add-btn {
           margin-top: auto;
-          padding: 11px;
+          padding: 12px;
           border: none; border-radius: 12px;
-          font-size: 0.92rem; font-weight: 700;
+          font-size: 0.95rem; font-weight: 700;
           cursor: pointer;
           background: linear-gradient(135deg, var(--lp-green), var(--lp-green-d));
           color: #fff;
           transition: all 0.25s ease;
-          display: flex; align-items: center; justify-content: center; gap: 6px;
-          box-shadow: 0 4px 14px rgba(46,204,113,0.3);
+          display: flex; align-items: center; justify-content: center; gap: 10px;
+          box-shadow: 0 4px 14px rgba(46, 66, 54, 0.3);
         }
         .lp2-add-btn:hover {
           transform: translateY(-2px);
-          box-shadow: 0 8px 22px rgba(46,204,113,0.4);
+          box-shadow: 0 8px 22px rgba(46, 66, 54, 0.4);
+        }
+        .lp2-add-icon {
+          flex-shrink: 0;
+          transition: transform 0.25s ease;
+        }
+        .lp2-add-btn:hover .lp2-add-icon {
+          transform: scale(1.15) rotate(-5deg);
         }
         .lp2-add-btn:active { transform: scale(0.97); }
         .lp2-add-btn.added {
@@ -926,7 +977,18 @@ export default function LandingPage({ onAddToCart }) {
                       className={`lp2-add-btn ${addedItems[item.id] ? "added" : ""}`}
                       onClick={() => handleAddToCartClick(item)}
                     >
-                      {addedItems[item.id] ? "✔ Added!" : "🛒 Add to Cart"}
+                      {addedItems[item.id] ? (
+                        "✔ Added!"
+                      ) : (
+                        <>
+                          <svg className="lp2-add-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="9" cy="21" r="1" />
+                            <circle cx="20" cy="21" r="1" />
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                          </svg>
+                          Add to Cart
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
