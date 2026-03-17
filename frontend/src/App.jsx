@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
-import { signOut } from "firebase/auth";
-import { auth } from "../firebaseConfig";
 import { useAuth } from "./context/AuthContext";
 
 import Login from "./components/Login";
@@ -20,7 +18,7 @@ import DeliveryBanner from "./components/DeliveryBanner";
 import "./app.css";
 
 function App() {
-  const { user, isAdmin, authLoading } = useAuth();
+  const { user, isAdmin, authLoading, logout } = useAuth();
   const [cart, setCart] = useState([]);
   // grandTotal = subtotal + delivery fee, set by Cart on checkout
   const [grandTotal, setGrandTotal] = useState(0);
@@ -96,7 +94,7 @@ function App() {
               <DeliveryBanner />
               <header className="app-header">
                 <div className="header-left">
-                  <h1>Welcome, {user.displayName}</h1>
+                  <h1>Welcome, {user.name || user.email}</h1>
                 </div>
                 <div className="header-right">
                   {/* Only SuperUser / Admin see the Admin Panel button */}

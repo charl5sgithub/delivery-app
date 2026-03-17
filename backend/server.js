@@ -1,13 +1,13 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
+import authRouter from './routes/auth.js';
 import itemsRouter from './routes/items.js';
 import ordersRouter from './routes/orders.js';
 import paymentsRouter from './routes/payments.js';
 import customersRouter from './routes/customers.js';
 import deliveryRouter from './routes/delivery.js';
 
-dotenv.config();
 const app = express();
 
 app.use(cors({
@@ -15,6 +15,7 @@ app.use(cors({
     // 1. Define allowed origins (Local + Production)
     const allowed = [
       "http://localhost:5173",
+      "http://localhost:5174",
       process.env.FRONTEND_URL?.replace(/\/$/, "")
     ].filter(Boolean);
 
@@ -22,8 +23,8 @@ app.use(cors({
     console.log("CORS Check - Incoming Origin:", origin);
     console.log("CORS Check - Static Allowed:", allowed);
 
-    // 3. Robust condition: Exact match OR any Vercel subdomain (for branch/preview URLs)
-    if (!origin || allowed.includes(origin) || origin.endsWith(".vercel.app")) {
+    // 3. Robust condition: Exact match, localhost (any port), or Vercel subdomains
+    if (!origin || allowed.includes(origin) || origin.startsWith("http://localhost:") || origin.endsWith(".vercel.app")) {
       callback(null, true);
     } else {
       console.error("CORS BLOCKED:", origin);
@@ -35,6 +36,7 @@ app.use(cors({
 
 app.use(express.json());
 
+app.use('/api/auth', authRouter);
 app.use('/api/items', itemsRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/payments', paymentsRouter);
