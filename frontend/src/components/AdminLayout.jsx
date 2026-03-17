@@ -1,15 +1,13 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { signOut } from 'firebase/auth';
-import { auth } from '../../firebaseConfig';
 import { useAuth } from '../context/AuthContext';
 
 export default function AdminLayout({ user }) {
-    const { userRole } = useAuth();
+    const { userRole, logout } = useAuth();
 
-    const handleLogout = async () => {
-        await signOut(auth);
+    const handleLogout = () => {
+        logout();
         window.location.href = '/';
     };
 
@@ -24,7 +22,7 @@ export default function AdminLayout({ user }) {
             <Sidebar onLogout={handleLogout} />
             <div className="admin-content">
                 <header style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h2>Welcome, {user?.displayName}</h2>
+                    <h2>Welcome, {user?.name || user?.email}</h2>
                     <span style={{
                         padding: '4px 14px',
                         borderRadius: '99px',

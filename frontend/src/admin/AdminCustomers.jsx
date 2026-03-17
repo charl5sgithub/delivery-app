@@ -106,7 +106,7 @@ export default function AdminCustomers() {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-User-Email': user?.email ?? ''   // ← RBAC auth header
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token') ?? ''}`
                     },
                     body: JSON.stringify({ role: selectedRole })
                 }

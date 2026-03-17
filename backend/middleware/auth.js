@@ -5,10 +5,11 @@
  *   import { requireRole } from '../middleware/auth.js';
  *   router.patch('/...', requireRole(['SuperUser', 'Admin']), myController);
  *
- * The frontend must send the logged-in user's email in the
- * "X-User-Email" request header for every protected request.
+ * The frontend must send the logged-in user's JWT in the Authorization header:
+ *   Authorization: Bearer <token>
  */
 
+import jwt from 'jsonwebtoken';
 import { supabase } from '../db/supabaseClient.js';
 
 /**
@@ -20,15 +21,34 @@ import { supabase } from '../db/supabaseClient.js';
 export function requireRole(allowedRoles = []) {
     return async (req, res, next) => {
         try {
-            const callerEmail = req.headers['x-user-email'];
+            // ── Extract Bearer token ──────────────────────────────────────────
+            const authHeader = req.headers['authorization'];
+            const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
-            if (!callerEmail) {
+            if (!token) {
                 return res.status(401).json({
-                    error: 'Unauthorized: Missing X-User-Email header.'
+                    error: 'Unauthorized: Missing Authorization header (Bearer token required).'
                 });
             }
 
-            // Look up the caller's role from the customers table
+            // ── Verify JWT ────────────────────────────────────────────────────
+            let payload;
+            try {
+                payload = jwt.verify(token, process.env.JWT_SECRET);
+            } catch (jwtErr) {
+                return res.status(401).json({
+                    error: 'Unauthorized: Invalid or expired token. Please log in again.'
+                });
+            }
+
+            const callerEmail = payload.email;
+
+            if (!callerEmail) {
+                return res.status(401).json({ error: 'Unauthorized: Token missing email claim.' });
+            }
+
+            // ── Look up the caller's live role from the customers table ───────
+            // (JWT role is used for speed, but DB is the source of truth)
             const { data: customer, error } = await supabase
                 .from('customers')
                 .select('role')
@@ -37,7 +57,7 @@ export function requireRole(allowedRoles = []) {
 
             if (error || !customer) {
                 return res.status(403).json({
-                    error: 'Forbidden: User not found in the system.'
+                    error: 'Forbidden: User not found in system.'
                 });
             }
 
@@ -45,11 +65,11 @@ export function requireRole(allowedRoles = []) {
 
             if (!allowedRoles.includes(userRole)) {
                 return res.status(403).json({
-                    error: `Forbidden: Requires one of [${allowedRoles.join(', ')}] role. Your role: ${userRole}`
+                    error: `Forbidden: Requires one of [${allowedRoles.join(', ')}]. Your role: ${userRole}`
                 });
             }
 
-            // Attach for downstream use
+            // ── Attach for downstream use ─────────────────────────────────────
             req.callerRole = userRole;
             req.callerEmail = callerEmail;
 
