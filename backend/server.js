@@ -7,6 +7,8 @@ import ordersRouter from './routes/orders.js';
 import paymentsRouter from './routes/payments.js';
 import customersRouter from './routes/customers.js';
 import deliveryRouter from './routes/delivery.js';
+import profileRouter from './routes/profile.js';
+import addressRouter from './routes/address.js';
 
 const app = express();
 
@@ -42,6 +44,8 @@ app.use('/api/orders', ordersRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/customers', customersRouter);
 app.use('/api/delivery', deliveryRouter);
+app.use('/api/profile', profileRouter);
+app.use('/api/address', addressRouter);
 
 // Export for Vercel
 export default app;

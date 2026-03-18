@@ -14,6 +14,7 @@ import AdminProducts from "./admin/AdminProducts";
 import ConfirmationDialog from "./components/ConfirmationDialog";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import DeliveryBanner from "./components/DeliveryBanner";
+import ProfilePage from "./pages/ProfilePage";
 
 import "./app.css";
 
@@ -120,9 +121,40 @@ function App() {
                       <circle cx="20" cy="21" r="1" />
                       <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
                     </svg>
-                    View Cart ({cartCount})
-                  </button>
-                </div>
+                      View Cart ({cartCount})
+                    </button>
+                    <button
+                      className="profile-btn"
+                      onClick={() => navigate("/profile")}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        padding: '8px 16px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      👤 Profile
+                    </button>
+                    <button
+                      className="logout-btn"
+                      onClick={() => { logout(); navigate("/"); }}
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                        color: '#fca5a5',
+                        borderRadius: '8px',
+                        padding: '8px 16px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Logout
+                    </button>
+                  </div>
               </header>
               <LandingPage onAddToCart={handleAddToCart} />
             </>
@@ -153,6 +185,12 @@ function App() {
               onPaymentSuccess={handlePaymentSuccess}
             />
           }
+        />
+
+        {/* ── Profile ───────────────────────────────────────────────────── */}
+        <Route
+          path="/profile"
+          element={<ProfilePage />}
         />
 
         {/* ── Admin (RBAC-guarded) ───────────────────────────────────────── */}
