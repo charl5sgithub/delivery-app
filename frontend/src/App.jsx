@@ -200,7 +200,7 @@ function App() {
         {/* ── Profile ───────────────────────────────────────────────────── */}
         <Route
           path="/profile"
-          element={<ProfilePage />}
+          element={<ProfilePage onAddToCart={handleAddToCart} />}
         />
 
         {/* ── Admin (RBAC-guarded) ───────────────────────────────────────── */}

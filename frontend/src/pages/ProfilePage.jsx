@@ -8,17 +8,37 @@ import AddressForm from '../components/profile/AddressForm';
 
 const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
 
-export default function ProfilePage() {
+export default function ProfilePage({ onAddToCart }) {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [addresses, setAddresses] = useState([]);
+    const [orders, setOrders] = useState([]);
     const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
     const [editingAddress, setEditingAddress] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [ordersLoading, setOrdersLoading] = useState(false);
 
     useEffect(() => {
-        if (user) fetchAddresses();
+        if (user) {
+            fetchAddresses();
+            fetchOrders();
+        }
     }, [user]);
+
+    const fetchOrders = async () => {
+        setOrdersLoading(true);
+        try {
+            const token = localStorage.getItem('auth_token');
+            const res = await axios.get(`${API_URL}/api/orders/mine`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            setOrders(res.data);
+        } catch (err) {
+            console.error('Fetch Orders Error:', err);
+        } finally {
+            setOrdersLoading(false);
+        }
+    };
 
     const fetchAddresses = async () => {
         try {
@@ -81,6 +101,27 @@ export default function ProfilePage() {
         }
     };
 
+    const handleRepeatOrder = (order) => {
+        if (!order.order_items || order.order_items.length === 0) return;
+        
+        order.order_items.forEach(oi => {
+            if (oi.items) {
+                // Construct item object expected by handleAddToCart
+                const itemToAdd = {
+                    id: oi.items.id || oi.item_id,
+                    name: oi.items.name,
+                    price: oi.items.price,
+                    image: oi.items.image,
+                };
+                onAddToCart(itemToAdd);
+            }
+        });
+
+        // Optional: show a small toast or redirect to cart
+        alert('Items from previous order added to cart!');
+        navigate('/cart');
+    };
+
     return (
         <div className="profile-page-container">
             <button className="back-nav-btn" onClick={() => navigate('/')}>
@@ -105,13 +146,25 @@ export default function ProfilePage() {
                 <div className="profile-section-card">
                     <div className="section-header-row">
                         <h3 className="section-title">Delivery Addresses</h3>
-                        <button 
-                            className="btn-outline" 
-                            onClick={() => { setEditingAddress(null); setIsAddressFormOpen(true); }}
-                        >
-                            + Add New
-                        </button>
+                        {!isAddressFormOpen && (
+                            <button 
+                                className="btn-primary" 
+                                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                                onClick={() => { setEditingAddress(null); setIsAddressFormOpen(true); }}
+                            >
+                                + Add New Address
+                            </button>
+                        )}
                     </div>
+
+                    {isAddressFormOpen && (
+                        <AddressForm 
+                            initialData={editingAddress}
+                            onSubmit={handleAddressSubmit}
+                            onCancel={() => { setIsAddressFormOpen(false); setEditingAddress(null); }}
+                            loading={loading}
+                        />
+                    )}
 
                     <AddressList 
                         addresses={addresses} 
@@ -120,16 +173,59 @@ export default function ProfilePage() {
                         onSetDefault={handleSetDefault}
                     />
                 </div>
-            </div>
 
-            {isAddressFormOpen && (
-                <AddressForm 
-                    initialData={editingAddress}
-                    onSubmit={handleAddressSubmit}
-                    onCancel={() => setIsAddressFormOpen(false)}
-                    loading={loading}
-                />
-            )}
+                <div className="profile-section-card">
+                    <h3 className="section-title">Previous Orders</h3>
+                    {ordersLoading ? (
+                        <div className="orders-loading">Loading your order history...</div>
+                    ) : orders.length === 0 ? (
+                        <div className="no-orders">
+                            <p>You haven't placed any orders yet.</p>
+                            <button className="btn-primary" onClick={() => navigate('/')}>Start Shopping</button>
+                        </div>
+                    ) : (
+                        <div className="orders-list">
+                            {orders.map(order => (
+                                <div key={order.order_id} className="order-history-card">
+                                    <div className="order-main-info">
+                                        <div className="order-meta">
+                                            <span className="order-number">Order #{order.order_id.toString().slice(-6)}</span>
+                                            <span className="order-date">{new Date(order.created_at).toLocaleDateString()}</span>
+                                        </div>
+                                        <div className="order-status-badge" data-status={order.order_status}>
+                                            {order.order_status}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="order-items-preview">
+                                        {order.order_items?.map((oi, idx) => (
+                                            <span key={idx} className="item-mini-tag">
+                                                {oi.items?.name} x{oi.quantity}
+                                            </span>
+                                        ))}
+                                    </div>
+
+                                    <div className="order-footer">
+                                        <div className="order-total">
+                                            Total: <strong>£{order.total_amount}</strong>
+                                        </div>
+                                        <button 
+                                            className="btn-repeat"
+                                            onClick={() => handleRepeatOrder(order)}
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="23 4 23 10 17 10" />
+                                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                                            </svg>
+                                            Repeat Order
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
 
             <style>{`
                 .profile-page-container {
@@ -379,6 +475,114 @@ export default function ProfilePage() {
                     gap: 12px;
                     margin-top: 24px;
                 }
+
+                /* ── Order History Styles ── */
+                .orders-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 16px;
+                }
+                .order-history-card {
+                    background: #fdfcf0;
+                    border-radius: 16px;
+                    padding: 20px;
+                    border: 1px solid rgba(0,0,0,0.05);
+                }
+                .order-main-info {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 12px;
+                }
+                .order-meta {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                }
+                .order-number {
+                    font-weight: 800;
+                    color: #2E4236;
+                    font-size: 1rem;
+                }
+                .order-date {
+                    font-size: 0.85rem;
+                    color: #8a867a;
+                }
+                .order-status-badge {
+                    padding: 4px 10px;
+                    border-radius: 6px;
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                }
+                .order-status-badge[data-status="PAID"],
+                .order-status-badge[data-status="DELIVERED"] {
+                    background: #e1fbd1;
+                    color: #438e1a;
+                }
+                .order-status-badge[data-status="PENDING"] {
+                    background: #fef3c7;
+                    color: #92400e;
+                }
+                .order-items-preview {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    margin-bottom: 16px;
+                    padding-bottom: 16px;
+                    border-bottom: 1px dashed rgba(0,0,0,0.1);
+                }
+                .item-mini-tag {
+                    background: #f1f8eb;
+                    color: #6F8E52;
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                    padding: 2px 8px;
+                    border-radius: 4px;
+                }
+                .order-footer {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .order-total {
+                    color: #4b4a45;
+                    font-size: 0.95rem;
+                }
+                .order-total strong {
+                    font-size: 1.1rem;
+                    color: #2E4236;
+                }
+                .btn-repeat {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    background: #6F8E52;
+                    color: #fff;
+                    border: none;
+                    border-radius: 8px;
+                    padding: 8px 16px;
+                    font-size: 0.85rem;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+                .btn-repeat:hover {
+                    background: #5a7442;
+                    transform: scale(1.05);
+                }
+                .no-orders {
+                    text-align: center;
+                    padding: 40px 0;
+                    color: #8a867a;
+                }
+                .orders-loading {
+                    text-align: center;
+                    padding: 20px 0;
+                    color: #6F8E52;
+                    font-style: italic;
+                }
+
                 @media (max-width: 640px) {
                     .form-grid { grid-template-columns: 1fr; }
                     .form-group.full-width { grid-column: span 1; }

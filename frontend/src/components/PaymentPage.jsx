@@ -8,9 +8,42 @@ console.log("Stripe key:", import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import axios from "axios";
+
+const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
 
 export default function PaymentPage({ total, cart, onPaymentSuccess }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [profile, setProfile] = React.useState(null);
+  const [defaultAddress, setDefaultAddress] = React.useState(null);
+
+  React.useEffect(() => {
+    if (user) {
+      fetchUserData();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      // Fetch profile
+      const profRes = await axios.get(`${API_URL}/api/profile`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setProfile(profRes.data);
+
+      // Fetch addresses and find default
+      const addrRes = await axios.get(`${API_URL}/api/address`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const def = addrRes.data.find(a => a.is_default);
+      setDefaultAddress(def);
+    } catch (err) {
+      console.error('Error fetching user data for checkout:', err);
+    }
+  };
 
   return (
     <div className="payment-page-wrapper" style={{
@@ -65,7 +98,13 @@ export default function PaymentPage({ total, cart, onPaymentSuccess }) {
           Total Amount: <strong style={{ color: '#10b981' }}>£{total}</strong>
         </p>
         <Elements stripe={stripePromise}>
-          <CheckoutForm total={total} cart={cart} onPaymentSuccess={onPaymentSuccess} />
+          <CheckoutForm 
+            total={total} 
+            cart={cart} 
+            onPaymentSuccess={onPaymentSuccess} 
+            initialProfile={profile}
+            initialAddress={defaultAddress}
+          />
         </Elements>
       </div>
     </div>

@@ -1,19 +1,13 @@
 import React, { useState } from "react";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import CreditCardVisual from "./CreditCardVisual";
-import { findAddresses } from "../utils/addressService";
 
-export default function CheckoutForm({ total, cart, onPaymentSuccess }) {
+export default function CheckoutForm({ total, cart, onPaymentSuccess, initialProfile, initialAddress }) {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [paymentMethod, setPaymentMethod] = useState('card');
-
-  // Address Autocomplete State
-  const [postcode, setPostcode] = useState("");
-  const [addressOptions, setAddressOptions] = useState([]);
-  const [addressLoading, setAddressLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -22,45 +16,21 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess }) {
     address: ""
   });
 
+  React.useEffect(() => {
+    if (initialProfile || initialAddress) {
+      setFormData(prev => ({
+        ...prev,
+        name: initialProfile ? `${initialProfile.first_name || ''} ${initialProfile.last_name || ''}`.trim() : prev.name,
+        email: initialProfile?.email || prev.email,
+        phone: initialProfile?.phone || prev.phone,
+        address: initialAddress ? `${initialAddress.address_line1}, ${initialAddress.city}, ${initialAddress.postcode}` : prev.address
+      }));
+    }
+  }, [initialProfile, initialAddress]);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setMessage("");
-  };
-
-  const handleFindAddress = async () => {
-    if (!postcode) {
-      setMessage("Please enter a postcode first.");
-      return;
-    }
-    setAddressLoading(true);
-    setMessage("");
-    try {
-      const addresses = await findAddresses(postcode);
-      setAddressOptions(addresses);
-      if (addresses.length > 0) {
-        // Automatically select the first one or just show dropdown
-        // We'll let user select from dropdown
-      }
-    } catch (error) {
-      console.error(error);
-      setMessage("Address search failed: " + error.message);
-      setAddressOptions([]);
-    } finally {
-      setAddressLoading(false);
-    }
-  };
-
-  const handleAddressSelect = (e) => {
-    const idx = e.target.value;
-    if (idx !== "") {
-      const selected = addressOptions[idx];
-      setFormData({
-        ...formData,
-        address: selected.label,
-        latitude: selected.latitude,
-        longitude: selected.longitude
-      });
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -169,37 +139,40 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess }) {
       <div className="checkout-form-side">
         <form onSubmit={handleSubmit} className="checkout-form">
           <div className="form-group">
-            <label>Name</label>
+            <label style={{ color: '#6F8E52', fontWeight: 700 }}>Name</label>
             <input
               name="name"
               type="text"
               required
               placeholder="John Doe"
               className="form-input"
+              style={{ backgroundColor: '#fdfcf0', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)' }}
               value={formData.name}
               onChange={handleChange}
             />
           </div>
           <div className="form-group">
-            <label>Email</label>
+            <label style={{ color: '#6F8E52', fontWeight: 700 }}>Email</label>
             <input
               name="email"
               type="email"
               required
               placeholder="john@example.com"
               className="form-input"
+              style={{ backgroundColor: '#fdfcf0', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)' }}
               value={formData.email}
               onChange={handleChange}
             />
           </div>
           <div className="form-group">
-            <label>Phone Number</label>
+            <label style={{ color: '#6F8E52', fontWeight: 700 }}>Phone Number</label>
             <input
               name="phone"
               type="tel"
               required
-              placeholder="+1 234 567 890"
+              placeholder="+44 7123 456789"
               className="form-input"
+              style={{ backgroundColor: '#fdfcf0', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)' }}
               value={formData.phone}
               onChange={handleChange}
             />
@@ -274,54 +247,27 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess }) {
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Address Lookup (UK)</label>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <input
-                type="text"
-                placeholder="Enter Postcode (e.g. SW1A 1AA)"
-                className="form-input"
-                value={postcode}
-                onChange={(e) => setPostcode(e.target.value)}
-                style={{ flex: 1 }}
-              />
-              <button
-                type="button"
-                onClick={handleFindAddress}
-                disabled={addressLoading}
-                className="cta-button"
-                style={{ width: 'auto', marginTop: 0, padding: '0 1rem', fontSize: '0.9rem' }}
-              >
-                {addressLoading ? 'Searching...' : 'Find Address'}
-              </button>
-            </div>
-            {addressOptions.length > 0 && (
-              <div style={{ marginTop: '0.5rem' }}>
-                <select
-                  className="form-input"
-                  onChange={handleAddressSelect}
-                  defaultValue=""
-                >
-                  <option value="" disabled>Select an address...</option>
-                  {addressOptions.map((addr, index) => (
-                    <option key={index} value={index}>{addr.label}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label>Full Address</label>
+          <div className="form-group" style={{ marginTop: '1rem' }}>
+            <label style={{ color: '#6F8E52', fontWeight: 700 }}>Delivery Address</label>
             <textarea
               name="address"
               required
-              placeholder="123 Main St, City, Country"
+              placeholder="123 Main St, City, Postcode"
               className="form-input"
               rows="3"
+              style={{ 
+                backgroundColor: '#fdfcf0', 
+                border: '1.5px solid rgba(111, 142, 82, 0.2)',
+                borderRadius: '12px',
+                padding: '14px',
+                fontSize: '0.95rem'
+              }}
               value={formData.address}
               onChange={handleChange}
             ></textarea>
+            <p style={{ fontSize: '0.75rem', color: '#8a867a', marginTop: '4px' }}>
+              ✨ Pre-filled from your profile. Feel free to edit for this delivery.
+            </p>
           </div>
 
           {paymentMethod === 'card' && (

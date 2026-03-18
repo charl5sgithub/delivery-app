@@ -41,17 +41,69 @@ function getNextWednesdayUK() {
   }).format(nextWed);
 }
 
+/**
+ * Calculates time remaining until the next Tuesday 10:00 PM UK time.
+ */
+function getTimeUntilCutoff() {
+  const now = new Date();
+  
+  // Get current time in London
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London',
+    year: 'numeric', month: 'numeric', day: 'numeric',
+    hour: 'numeric', minute: 'numeric', second: 'numeric',
+    hour12: false
+  });
+  
+  const parts = formatter.formatToParts(now);
+  const find = (type) => parseInt(parts.find(p => p.type === type).value);
+  
+  // We need the weekday too
+  const weekdayName = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'long' }).format(now);
+  const weekdayMap = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
+  const ukDow = weekdayMap[weekdayName];
+
+  // Target is Tuesday (2) at 22:00:00
+  let target = new Date(now);
+  let daysToTarget = (2 - ukDow + 7) % 7;
+  
+  // If it's Tuesday, check if 10 PM has passed
+  if (daysToTarget === 0) {
+    const hours = find('hour');
+    if (hours >= 22) {
+        daysToTarget = 7;
+    }
+  }
+
+  target.setDate(now.getDate() + daysToTarget);
+  target.setHours(22, 0, 0, 0);
+
+  // Re-sync target to UK timezone if necessary (handling DST boundaries)
+  // Simply using the difference is usually fine for a 7-day window
+  const diff = target.getTime() - now.getTime();
+  
+  if (diff <= 0) return { h: 0, m: 0, s: 0, total: 0 };
+
+  const h = Math.floor(diff / (1000 * 60 * 60));
+  const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+  return { h, m, s, total: diff };
+}
+
 export default function DeliveryBanner() {
-  const [visible, setVisible] = useState(false);
-  const [nextWed, setNextWed] = useState("");
+  const [visible, setVisible] = useState(true);
+  const [nextWed, setNextWed] = useState(getNextWednesdayUK());
+  const [timeLeft, setTimeLeft] = useState(getTimeUntilCutoff());
 
   useEffect(() => {
-    const dow = getUKDayOfWeek();
-    // Show on Thursday (4), Friday (5), Saturday (6)
-    if (dow === 4 || dow === 5 || dow === 6) {
+    const timer = setInterval(() => {
+      const remaining = getTimeUntilCutoff();
+      setTimeLeft(remaining);
       setNextWed(getNextWednesdayUK());
-      setVisible(true);
-    }
+    }, 1000);
+
+    return () => clearInterval(timer);
   }, []);
 
   if (!visible) return null;
@@ -129,15 +181,28 @@ export default function DeliveryBanner() {
           text-align: center;
           line-height: 1.4;
           z-index: 2;
-          padding: 6px 20px;
+          padding: 8px 24px;
           background: rgba(255, 255, 255, 0.08);
-          border: 1px solid rgba(255, 255, 255, 0.15);
+          border: 1px solid rgba(255, 255, 255, 0.2);
           border-radius: 99px;
-          animation: bannerTextPulse 3s infinite ease-in-out;
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 12px;
           color: #fff;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .banner-countdown {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: #A3E635;
+            color: #1e2e24;
+            padding: 2px 10px;
+            border-radius: 6px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            min-width: 90px;
+            justify-content: center;
         }
         .delivery-banner .banner-date {
           background: rgba(163, 230, 53, 0.2);
@@ -186,8 +251,10 @@ export default function DeliveryBanner() {
           </svg>
         </span>
         <span className="banner-text">
-          Order Today for Next Wednesday Delivery —&nbsp;
-          <span className="banner-date">{nextWed}</span>
+          <span>Order by <strong>Tuesday 10 PM</strong> for Wed Delivery: <strong>{nextWed}</strong></span>
+          <div className="banner-countdown">
+            {String(timeLeft.h).padStart(2, '0')}:{String(timeLeft.m).padStart(2, '0')}:{String(timeLeft.s).padStart(2, '0')}
+          </div>
         </span>
         <button
           className="banner-dismiss"
