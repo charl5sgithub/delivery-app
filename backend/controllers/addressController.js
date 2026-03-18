@@ -2,6 +2,7 @@ import * as addressService from '../services/addressService.js';
 import Joi from 'joi';
 
 const addressSchema = Joi.object({
+    label: Joi.string().required(),
     addressLine: Joi.string().required(),
     city: Joi.string().required(),
     postcode: Joi.string().required(),

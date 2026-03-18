@@ -64,6 +64,27 @@ const FEATURES = [
   },
 ];
 
+const TESTIMONIALS = [
+  {
+    name: "Sarah Jenkins",
+    role: "Regular Customer",
+    content: "The fish is always incredibly fresh. I love the 'Cut and Clean' option, it saves me so much time in the kitchen!",
+    avatar: "https://i.pravatar.cc/150?u=sarah"
+  },
+  {
+    name: "David Chen",
+    role: "Local Chef",
+    content: "Highest quality seafood in the area. Delivery is always on time, and the tracking is spot on.",
+    avatar: "https://i.pravatar.cc/150?u=david"
+  },
+  {
+    name: "Emma Wilson",
+    role: "Busy Parent",
+    content: "The new address labeling makes ordering for my parents so easy. Highly recommend!",
+    avatar: "https://i.pravatar.cc/150?u=emma"
+  }
+];
+
 /* ─── Reusable counter for hero stats ────────────────────────────────────── */
 function AnimatedStat({ end, suffix, label }) {
   const [count, setCount] = useState(0);
@@ -109,6 +130,11 @@ export default function LandingPage({ onAddToCart }) {
   const [activeCategory, setActiveCategory] = useState("Fish");
   const [addedItems, setAddedItems] = useState({});
   const [heroVisible, setHeroVisible] = useState(false);
+  const [prepSelections, setPrepSelections] = useState({});
+
+  const handlePrepChange = (itemId, type) => {
+    setPrepSelections(prev => ({ ...prev, [itemId]: type }));
+  };
 
   useEffect(() => {
     getItems().then((data) => setItems(data));
@@ -118,7 +144,9 @@ export default function LandingPage({ onAddToCart }) {
   }, []);
 
   const handleAddToCartClick = (item) => {
-    onAddToCart(item);
+    const isFish = activeCategory === "Fish";
+    const preparationType = isFish ? (prepSelections[item.id] || 'CLEAN_ONLY') : null;
+    onAddToCart({ ...item, preparationType });
     setAddedItems((prev) => ({ ...prev, [item.id]: true }));
     setTimeout(() => {
       setAddedItems((prev) => ({ ...prev, [item.id]: false }));
@@ -870,6 +898,96 @@ export default function LandingPage({ onAddToCart }) {
           .lp2-footer-grid { grid-template-columns: 1fr; }
           .lp2-footer-bottom { flex-direction: column; text-align: center; }
         }
+        .lp2-prep-box {
+          margin: 12px 0;
+          background: rgba(46, 66, 54, 0.05);
+          padding: 8px;
+          border-radius: 10px;
+        }
+        .lp2-prep-label {
+          display: block;
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: var(--lp-green);
+          margin-bottom: 6px;
+        }
+        .lp2-prep-options {
+          display: flex;
+          gap: 6px;
+        }
+        .lp2-prep-opt {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          padding: 6px 4px;
+          background: #fff;
+          border: 1.5px solid #ddd;
+          border-radius: 8px;
+          font-size: 0.7rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .lp2-prep-opt.active {
+          border-color: var(--lp-lime);
+          background: #f1f8eb;
+          color: var(--lp-lime);
+        }
+        .lp2-prep-opt input {
+          display: none;
+        }
+
+        /* ── Testimonials ── */
+        .lp2-testimonials {
+          padding: 80px 24px;
+          background: #fdfcf0;
+        }
+        .lp2-testimonials-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 24px;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+        .lp2-testimonial-card {
+          background: #fff;
+          padding: 32px;
+          border-radius: 20px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+          border: 1px solid rgba(111, 142, 82, 0.1);
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        .lp2-testimonial-content {
+          font-style: italic;
+          color: #4b4a45;
+          line-height: 1.6;
+          font-size: 1rem;
+        }
+        .lp2-testimonial-user {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-top: auto;
+        }
+        .lp2-testimonial-avatar {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+        .lp2-testimonial-info h4 {
+          margin: 0;
+          font-size: 0.95rem;
+          color: var(--lp-green);
+        }
+        .lp2-testimonial-info span {
+          font-size: 0.8rem;
+          color: #8a867a;
+        }
       `}</style>
 
       <div className="lp2">
@@ -1043,10 +1161,49 @@ export default function LandingPage({ onAddToCart }) {
                   </div>
                   <div className="lp2-product-body">
                     <h4 className="lp2-product-name">{item.name}</h4>
-                    <p className="lp2-product-note">✨ Price after clean & cut</p>
+                    <p className="lp2-product-note" style={{ 
+                      color: "var(--lp-lime)", 
+                      fontWeight: 700, 
+                      fontSize: "0.75rem",
+                      background: "rgba(111, 142, 82, 0.1)",
+                      padding: "4px 8px",
+                      borderRadius: "6px",
+                      display: "inline-block"
+                    }}>
+                      ✨ Price includes Clean & Cut
+                    </p>
                     <div className="lp2-product-price">
                       £{Number(item.price).toFixed(2)} <span>/ {item.unit || "kg"}</span>
                     </div>
+
+                    {activeCategory === "Fish" && (
+                      <div className="lp2-prep-box">
+                        <span className="lp2-prep-label">Preparation:</span>
+                        <div className="lp2-prep-options">
+                          <label className={`lp2-prep-opt ${ (prepSelections[item.id] || 'CLEAN_ONLY') === 'CLEAN_ONLY' ? 'active' : '' }`}>
+                            <input 
+                              type="radio" 
+                              name={`prep-${item.id}`} 
+                              value="CLEAN_ONLY" 
+                              checked={(prepSelections[item.id] || 'CLEAN_ONLY') === 'CLEAN_ONLY'}
+                              onChange={() => handlePrepChange(item.id, 'CLEAN_ONLY')}
+                            />
+                            Clean Only
+                          </label>
+                          <label className={`lp2-prep-opt ${ prepSelections[item.id] === 'CUT_AND_CLEAN' ? 'active' : '' }`}>
+                            <input 
+                              type="radio" 
+                              name={`prep-${item.id}`} 
+                              value="CUT_AND_CLEAN" 
+                              checked={prepSelections[item.id] === 'CUT_AND_CLEAN'}
+                              onChange={() => handlePrepChange(item.id, 'CUT_AND_CLEAN')}
+                            />
+                            Cut & Clean
+                          </label>
+                        </div>
+                      </div>
+                    )}
+
                     <button
                       className={`lp2-add-btn ${addedItems[item.id] ? "added" : ""}`}
                       onClick={() => handleAddToCartClick(item)}
@@ -1091,6 +1248,32 @@ export default function LandingPage({ onAddToCart }) {
                 </div>
                 <h3>{f.title}</h3>
                 <p>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ════════════════════ TESTIMONIALS ════════════════════ */}
+        <section className="lp2-testimonials">
+          <div className="lp2-section-header">
+            <div className="lp2-section-tag">Community</div>
+            <h2 className="lp2-section-title">Customer Feedback</h2>
+            <p className="lp2-section-sub">What our regular shoppers are saying</p>
+          </div>
+          <div className="lp2-testimonials-grid">
+            {TESTIMONIALS.map((t, idx) => (
+              <div key={idx} className="lp2-testimonial-card">
+                <div className="lp2-stars" style={{ color: "#f59e0b", fontSize: "0.8rem", marginBottom: "8px" }}>
+                  ★★★★★
+                </div>
+                <p className="lp2-testimonial-content">"{t.content}"</p>
+                <div className="lp2-testimonial-user">
+                  <img src={t.avatar} alt={t.name} className="lp2-testimonial-avatar" />
+                  <div className="lp2-testimonial-info">
+                    <h4>{t.name}</h4>
+                    <span>{t.role}</span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
