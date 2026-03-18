@@ -1,11 +1,7 @@
 import React from "react";
-import { loadStripe } from "@stripe/stripe-js";
-import { Elements } from "@stripe/react-stripe-js";
 import CheckoutForm from "./CheckoutForm";
 // import "./PaymentPage.css";
 
-console.log("Stripe key:", import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -99,16 +95,14 @@ export default function PaymentPage({ total, cart, onPaymentSuccess }) {
         <p style={{ marginBottom: '20px', textAlign: 'center', fontSize: window.innerWidth < 640 ? '1rem' : '1.2rem' }}>
           Total Amount: <strong style={{ color: '#10b981' }}>£{total}</strong>
         </p>
-        <Elements stripe={stripePromise}>
-          <CheckoutForm 
-            total={total} 
-            cart={cart} 
-            onPaymentSuccess={onPaymentSuccess} 
-            initialProfile={profile}
-            initialAddress={defaultAddress}
-            addresses={addresses}
-          />
-        </Elements>
+        <CheckoutForm 
+          total={total} 
+          cart={cart} 
+          onPaymentSuccess={onPaymentSuccess} 
+          initialProfile={profile}
+          initialAddress={defaultAddress}
+          addresses={addresses}
+        />
       </div>
     </div>
   );

@@ -1,17 +1,10 @@
 import express from "express";
-import Stripe from "stripe";
-import dotenv from "dotenv";
+import pkg from "globalpayments-api";
+const { PaymentMethod } = pkg;
+import "../config/gpConfig.js";
 import { supabase } from "../db/supabaseClient.js";
 import { getOrders, getOrderDetails, exportOrders, updateOrderStatus, calculateOrders, getUsersOrders } from "../controllers/orderController.js";
 import { requireRole } from "../middleware/auth.js";
-
-dotenv.config();
-
-// Validate Stripe key on startup
-if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.startsWith("sk_test_xxx")) {
-  console.warn("⚠️  WARNING: STRIPE_SECRET_KEY is missing or is a placeholder. Card payments will fail.");
-}
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const router = express.Router();
 
@@ -19,50 +12,42 @@ const router = express.Router();
 router.post("/checkout", async (req, res) => {
   const { name, email, phone, address, items, total, paymentMethod, paymentMethodId, latitude, longitude, label, city, postcode } = req.body;
 
-  console.log("--- New Checkout Request ---");
+  console.log("--- New Checkout Request (HandePay) ---");
   console.log("Method:", paymentMethod);
   console.log("Name:", name);
-  console.log("Total:", total);
-  console.log("Items Count:", items?.length);
+  console.log("Token:", paymentMethodId);
 
   const isCOD = paymentMethod === 'cod';
 
-  // ── For card payments: charge via Stripe FIRST (fail fast before writing to DB) ─
-  let stripeTransactionId = null;
+  // ── For card payments: charge via Global Payments FIRST ─
+  let gpTransactionId = null;
   if (!isCOD) {
     if (!paymentMethodId) {
-      return res.status(400).json({ error: "paymentMethodId is required for card payments." });
+      return res.status(400).json({ error: "paymentMethodId (GP Token) is required for card payments." });
     }
     try {
-      console.log("0. Charging card via Stripe...");
-      // Amount must be in smallest currency unit (pence for GBP)
-      const amountInPence = Math.round(parseFloat(total) * 100);
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: amountInPence,
-        currency: "gbp",
-        payment_method: paymentMethodId,
-        confirm: true,
-        automatic_payment_methods: {
-          enabled: true,
-          allow_redirects: "never",  // Prevent redirect-based methods in server-side confirm
-        },
-        description: `Order for ${name} (${email})`,
-        receipt_email: email,
-      });
+      console.log("0. Charging card via Global Payments...");
+      
+      const entry = new PaymentMethod();
+      entry.token = paymentMethodId;
+      
+      const transaction = await entry
+        .charge(total)
+        .withCurrency("GBP")
+        .execute();
 
-      if (paymentIntent.status !== "succeeded") {
-        console.error("Stripe PaymentIntent not succeeded:", paymentIntent.status);
+      if (transaction.responseCode !== "00") {
+        console.error("GP Transaction Failed:", transaction.responseMessage);
         return res.status(402).json({
-          error: `Payment ${paymentIntent.status}. Please try again or use a different card.`
+          error: `Payment failed: ${transaction.responseMessage}. Code: ${transaction.responseCode}`
         });
       }
 
-      stripeTransactionId = paymentIntent.id;
-      console.log("Stripe charge succeeded. PI:", stripeTransactionId);
-    } catch (stripeErr) {
-      console.error("Stripe Error:", stripeErr.message);
-      // Surface the Stripe decline reason to the user
-      return res.status(402).json({ error: stripeErr.message || "Card payment failed. Please try again." });
+      gpTransactionId = transaction.transactionId;
+      console.log("GP charge succeeded. ID:", gpTransactionId);
+    } catch (gpErr) {
+      console.error("Global Payments Error:", gpErr.message);
+      return res.status(402).json({ error: gpErr.message || "Card payment failed via HandePay. Please try again." });
     }
   }
 
@@ -152,7 +137,7 @@ router.post("/checkout", async (req, res) => {
         status: isCOD ? "pending" : "success",
         payment_method: isCOD ? "cod" : "card",
         // For card: real Stripe PI id. For COD: a reference prefix.
-        transaction_id: isCOD ? `cod_${Date.now()}` : stripeTransactionId
+        transaction_id: isCOD ? `cod_${Date.now()}` : gpTransactionId
       }]);
 
     if (payError) {

@@ -1,12 +1,10 @@
-import React, { useState } from "react";
-import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import React, { useState, useEffect, useRef } from "react";
 import CreditCardVisual from "./CreditCardVisual";
 import { useNavigate } from "react-router-dom";
 
 export default function CheckoutForm({ total, cart, onPaymentSuccess, initialProfile, initialAddress, addresses }) {
-  const stripe = useStripe();
-  const elements = useElements();
   const navigate = useNavigate();
+  const gpFormRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [paymentMethod, setPaymentMethod] = useState('card');
@@ -52,32 +50,112 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
     }
   };
 
+  // Global Payments Initialization
+  useEffect(() => {
+    if (paymentMethod !== 'card' || !window.GlobalPayments) return;
+
+    // Use a small delay to ensure DOM elements are ready
+    const timer = setTimeout(() => {
+        try {
+            // 1. Configure
+            window.GlobalPayments.configure({
+                publicId: import.meta.env.VITE_GP_APP_ID || "pk_test_placeholder",
+            });
+
+            // 2. Check for UI
+            if (!window.GlobalPayments.ui) {
+                console.error("GP UI not loaded");
+                return;
+            }
+
+            // 3. Create Form
+            const form = window.GlobalPayments.ui.form({
+                fields: {
+                    "card-number": {
+                        target: "#gp-card-number",
+                        placeholder: "•••• •••• •••• ••••"
+                    },
+                    "card-expiration": {
+                        target: "#gp-card-expiry",
+                        placeholder: "MM / YYYY"
+                    },
+                    "card-cvv": {
+                        target: "#gp-card-cvv",
+                        placeholder: "CVV"
+                    }
+                },
+                styles: {
+                    'input': {
+                        'font-size': '16px',
+                        'color': '#2E4236',
+                        'font-family': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        'padding': '0px'
+                    },
+                    '.invalid': {
+                        'color': '#dc2626'
+                    },
+                    'input:focus': {
+                        'outline': 'none'
+                    }
+                }
+            });
+
+            console.log("GP Form Created:", form);
+            gpFormRef.current = form;
+
+            // 3. Setup listeners
+            form.on("token-success", (resp) => {
+                submitOrderWithToken(resp.paymentReference);
+            });
+
+            form.on("token-error", (resp) => {
+                setMessage(`❌ Payment failed: ${resp.error.message || 'Validation error'}`);
+                setLoading(false);
+            });
+
+            form.on("error", (resp) => {
+                setMessage(`❌ Global Payments Error: ${resp.message}`);
+                setLoading(false);
+            });
+
+        } catch (err) {
+            console.error("GP Init Error:", err);
+        }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [paymentMethod]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (paymentMethod === 'card' && (!stripe || !elements)) return;
-
     setLoading(true);
     setMessage("");
 
+    if (paymentMethod === 'card') {
+        const form = gpFormRef.current;
+        if (form) {
+            console.log("Attempting GP Submit on:", form);
+            if (typeof form.submit === 'function') {
+                form.submit(); // Standard v1 method
+            } else if (typeof form.tokenize === 'function') {
+                form.tokenize(); // Possible alternative
+            } else {
+                console.error("GP Form instance has no submit/tokenize method:", form);
+                setMessage("❌ Payment system error. Please refresh the page.");
+                setLoading(false);
+            }
+        } else {
+            setMessage("❌ Payment system not ready. Please refresh.");
+            setLoading(false);
+        }
+    } else {
+        // COD / Pay with Cash
+        submitOrderWithToken(null);
+    }
+  };
+
+  const submitOrderWithToken = async (paymentMethodId) => {
     try {
-      let paymentMethodId = null;
-
-      if (paymentMethod === 'card') {
-        const { error: stripeError, paymentMethod: stripePaymentMethod } = await stripe.createPaymentMethod({
-          type: 'card',
-          card: elements.getElement(CardElement),
-          billing_details: {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            address: { line1: formData.address }
-          }
-        });
-
-        if (stripeError) throw new Error(stripeError.message);
-        paymentMethodId = stripePaymentMethod.id;
-      }
-
       const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
       
       // Prepare items with preparation_type
@@ -108,7 +186,7 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
       }, 1000);
 
     } catch (error) {
-      setMessage("❌ Payment failed: " + error.message);
+      setMessage("❌ Checkout failed: " + error.message);
       setLoading(false);
     }
   };
@@ -308,17 +386,57 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
           </div>
 
           {paymentMethod === 'card' && (
-            <div className="form-group">
-              <label>Card Details</label>
-              <div className="card-element-container" style={{
-                padding: '12px',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                backgroundColor: '#fff',
-                marginTop: '0.5rem'
-              }}>
-                <CardElement />
-              </div>
+            <div className="handepay-container" style={{
+                marginTop: '1.5rem',
+                padding: '24px',
+                backgroundColor: '#fdfcf0',
+                borderRadius: '16px',
+                border: '1.5px solid rgba(111, 142, 82, 0.2)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                boxSizing: 'border-box',
+                width: '100%'
+            }}>
+                <label style={{ color: '#2E4236', fontWeight: 800, display: 'block', marginBottom: '16px' }}>Card Information</label>
+                
+                <div className="gp-field-group" style={{ marginBottom: '16px', width: '100%' }}>
+                    <div id="gp-card-number" style={{ 
+                        height: '45px', 
+                        padding: '0 12px', 
+                        border: '1px solid #e5e7eb', 
+                        borderRadius: '10px',
+                        backgroundColor: '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        boxSizing: 'border-box'
+                    }}></div>
+                </div>
+
+                <div className="gp-row" style={{ display: 'flex', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
+                    <div className="gp-field-group" style={{ flex: 1, minWidth: 0 }}>
+                        <div id="gp-card-expiry" style={{ 
+                            height: '45px', 
+                            padding: '0 12px', 
+                            border: '1px solid #e5e7eb', 
+                            borderRadius: '10px',
+                            backgroundColor: '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            boxSizing: 'border-box'
+                        }}></div>
+                    </div>
+                    <div className="gp-field-group" style={{ flex: 1, minWidth: 0 }}>
+                        <div id="gp-card-cvv" style={{ 
+                            height: '45px', 
+                            padding: '0 12px', 
+                            border: '1px solid #e5e7eb', 
+                            borderRadius: '10px',
+                            backgroundColor: '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            boxSizing: 'border-box'
+                        }}></div>
+                    </div>
+                </div>
             </div>
           )}
 
