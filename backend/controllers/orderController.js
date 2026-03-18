@@ -321,4 +321,40 @@ export const calculateOrders = async (req, res) => {
     }
 };
 
+export const getUsersOrders = async (req, res) => {
+    try {
+        const email = req.callerEmail;
+        
+        const { data: customer, error: custError } = await supabase
+            .from('customers')
+            .select('customer_id')
+            .eq('email', email)
+            .single();
+
+        if (custError || !customer) {
+            return res.status(404).json({ error: 'Customer not found' });
+        }
+
+        const { data: orders, error: ordersError } = await supabase
+            .from('orders')
+            .select(`
+                *,
+                addresses (*),
+                order_items (
+                    *,
+                    items (name, price, image)
+                )
+            `)
+            .eq('customer_id', customer.customer_id)
+            .order('created_at', { ascending: false });
+
+        if (ordersError) throw ordersError;
+
+        res.json(orders);
+    } catch (error) {
+        console.error('Get Users Orders Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
 

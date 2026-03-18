@@ -31,57 +31,71 @@ export default function AddressForm({ initialData, onSubmit, onCancel, loading }
     }, [initialData, reset]);
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content" style={{ borderTop: '4px solid #6F8E52' }}>
-                <h3 style={{ fontSize: '1.5rem', marginBottom: '24px', fontWeight: '800', color: '#4b4a45' }}>{initialData ? 'Update Address' : 'Add New Address'}</h3>
-                
-                <form onSubmit={handleSubmit(onSubmit)}>
-                    <div className="form-group">
-                        <label>Street / Area*</label>
+        <div className="inline-address-form" style={{ 
+            backgroundColor: '#fdfcf0', 
+            padding: '24px', 
+            borderRadius: '16px', 
+            border: '2px solid #6F8E52',
+            marginBottom: '24px'
+        }}>
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '20px', fontWeight: '800', color: '#4b4a45' }}>
+                {initialData ? 'Edit Address' : 'Add New Address'}
+            </h3>
+            
+            <form onSubmit={handleSubmit(onSubmit)}>
+                <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                        <label style={{ fontSize: '0.85rem', color: '#8a867a', fontWeight: 600 }}>Street / Area*</label>
                         <input 
                             {...register('addressLine', { required: 'Address is required' })} 
                             className={errors.addressLine ? 'input-error' : ''}
+                            style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
                         />
                     </div>
 
                     <div className="form-group">
-                        <label>City*</label>
+                        <label style={{ fontSize: '0.85rem', color: '#8a867a', fontWeight: 600 }}>City*</label>
                         <input 
                             {...register('city', { required: 'City is required' })} 
                             className={errors.city ? 'input-error' : ''}
+                            style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
                         />
                     </div>
 
                     <div className="form-group">
-                        <label>Postcode*</label>
+                        <label style={{ fontSize: '0.85rem', color: '#8a867a', fontWeight: 600 }}>Postcode*</label>
                         <input 
                             {...register('postcode', { required: 'Postcode is required' })} 
                             className={errors.postcode ? 'input-error' : ''}
+                            style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label>Preferred Delivery Slot*</label>
-                        <select {...register('deliverySlot', { required: true })}>
+                    <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                        <label style={{ fontSize: '0.85rem', color: '#8a867a', fontWeight: 600 }}>Preferred Delivery Slot*</label>
+                        <select 
+                            {...register('deliverySlot', { required: true })}
+                            style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', backgroundColor: 'white' }}
+                        >
                             {SLOTS.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                     </div>
 
-                    <div className="form-group">
-                        <div className="checkbox-group">
+                    <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                        <div className="checkbox-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <input type="checkbox" id="isDefault" {...register('isDefault')} />
-                            <label htmlFor="isDefault">Mark as default delivery address</label>
+                            <label htmlFor="isDefault" style={{ fontSize: '0.9rem', color: '#4b4a45' }}>Mark as default delivery address</label>
                         </div>
                     </div>
+                </div>
 
-                    <div className="modal-actions">
-                        <button type="button" onClick={onCancel} className="btn-secondary">Cancel</button>
-                        <button type="submit" className="btn-primary" disabled={loading}>
-                            {loading ? 'Saving...' : 'Save Address'}
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+                    <button type="button" onClick={onCancel} className="btn-secondary" style={{ padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
+                    <button type="submit" className="btn-primary" disabled={loading} style={{ padding: '10px 20px', borderRadius: '8px', backgroundColor: '#6F8E52', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
+                        {loading ? 'Saving...' : 'Save Address'}
+                    </button>
+                </div>
+            </form>
         </div>
     );
 }

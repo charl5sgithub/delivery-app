@@ -184,6 +184,10 @@ export default function LandingPage({ onAddToCart }) {
           70% { transform: scale(1.15) rotate(4deg); }
           100%{ transform: scale(1) rotate(0deg);   opacity: 1; }
         }
+        @keyframes lp-scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
 
         /* ── Container ── */
         .lp2 {
@@ -596,7 +600,11 @@ export default function LandingPage({ onAddToCart }) {
         .lp2-product-name {
           font-size: 1rem; font-weight: 700;
           color: var(--lp-charcoal);
-          margin: 0 0 0.3rem; line-height: 1.3;
+          margin: 0 0 0.2rem; line-height: 1.3;
+        }
+        .lp2-product-note {
+          font-size: 0.75rem; color: #6F8E52; font-weight: 600;
+          margin-bottom: 0.6rem;
         }
         .lp2-product-price {
           font-size: 1.3rem; font-weight: 800;
@@ -685,6 +693,72 @@ export default function LandingPage({ onAddToCart }) {
         }
         .lp2-feature-card p {
           color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6; margin: 0;
+        }
+
+        /* ── Testimonials ── */
+        .lp2-testimonials {
+          padding: 100px 0;
+          background: #fff;
+          overflow: hidden;
+        }
+        .lp2-testimonial-track {
+          display: flex;
+          width: max-content;
+          animation: lp-scroll 40s linear infinite;
+          gap: 30px;
+          padding: 20px 0;
+        }
+        .lp2-testimonial-track:hover {
+            animation-play-state: paused;
+        }
+        .lp2-testimonial-card {
+          width: 380px;
+          background: #fdfcf9;
+          border-radius: 24px;
+          padding: 32px;
+          border: 1px solid rgba(111, 142, 82, 0.1);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+          transition: transform 0.3s;
+        }
+        .lp2-testimonial-card:hover {
+            transform: scale(1.02);
+            border-color: #6F8E52;
+        }
+        .lp2-test-stars {
+            color: #f59e0b;
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+        }
+        .lp2-test-text {
+            font-size: 1.05rem;
+            color: #4b4a45;
+            line-height: 1.6;
+            font-style: italic;
+            margin-bottom: 24px;
+        }
+        .lp2-test-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .lp2-test-avatar {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background: #6F8E52;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+        }
+        .lp2-test-info h4 {
+            font-size: 1rem;
+            margin: 0;
+            color: #2E4236;
+        }
+        .lp2-test-info span {
+            font-size: 0.8rem;
+            color: #8a867a;
         }
 
         /* ═══════════════════════════════════════════════════════════════
@@ -968,10 +1042,10 @@ export default function LandingPage({ onAddToCart }) {
                     </span>
                   </div>
                   <div className="lp2-product-body">
-                    <div className="lp2-product-name">{item.name}</div>
+                    <h4 className="lp2-product-name">{item.name}</h4>
+                    <p className="lp2-product-note">✨ Price after clean & cut</p>
                     <div className="lp2-product-price">
-                      £{Number(item.price).toFixed(2)}
-                      <span> / item</span>
+                      £{Number(item.price).toFixed(2)} <span>/ {item.unit || "kg"}</span>
                     </div>
                     <button
                       className={`lp2-add-btn ${addedItems[item.id] ? "added" : ""}`}

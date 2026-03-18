@@ -3,7 +3,7 @@ import React from "react";
 
 /** £1 delivery fee for orders under £20, free at £20+ */
 const DELIVERY_THRESHOLD = 20;
-const DELIVERY_FEE = 1;
+const DELIVERY_FEE = 2;
 
 export default function Cart({ cart, onCheckout, onUpdateQuantity, onRemoveFromCart, onBack }) {
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);

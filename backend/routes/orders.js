@@ -2,7 +2,8 @@ import express from "express";
 import Stripe from "stripe";
 import dotenv from "dotenv";
 import { supabase } from "../db/supabaseClient.js";
-import { getOrders, getOrderDetails, exportOrders, updateOrderStatus, calculateOrders } from "../controllers/orderController.js";
+import { getOrders, getOrderDetails, exportOrders, updateOrderStatus, calculateOrders, getUsersOrders } from "../controllers/orderController.js";
+import { requireRole } from "../middleware/auth.js";
 
 dotenv.config();
 
@@ -173,6 +174,9 @@ router.get("/export", exportOrders);
 
 // Calculate financial breakdown for selected orders
 router.post("/calculate", calculateOrders);
+
+// Get my orders
+router.get("/mine", requireRole(['User', 'Admin', 'SuperUser']), getUsersOrders);
 
 // Get order details
 router.get("/:id", getOrderDetails);
