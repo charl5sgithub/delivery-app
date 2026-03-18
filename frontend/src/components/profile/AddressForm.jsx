@@ -32,8 +32,8 @@ export default function AddressForm({ initialData, onSubmit, onCancel, loading }
 
     return (
         <div className="modal-overlay">
-            <div className="modal-content">
-                <h3>{initialData ? 'Edit Address' : 'Add New Address'}</h3>
+            <div className="modal-content" style={{ borderTop: '4px solid #6F8E52' }}>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '24px', fontWeight: '800', color: '#4b4a45' }}>{initialData ? 'Update Address' : 'Add New Address'}</h3>
                 
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="form-group">

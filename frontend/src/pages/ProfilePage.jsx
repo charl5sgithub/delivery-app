@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PersonalInfoForm from '../components/profile/PersonalInfoForm';
 import AddressList from '../components/profile/AddressList';
@@ -9,6 +10,7 @@ const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
 
 export default function ProfilePage() {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [addresses, setAddresses] = useState([]);
     const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
     const [editingAddress, setEditingAddress] = useState(null);
@@ -81,9 +83,17 @@ export default function ProfilePage() {
 
     return (
         <div className="profile-page-container">
+            <button className="back-nav-btn" onClick={() => navigate('/')}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                </svg>
+                Back to Store
+            </button>
+
             <header className="profile-header">
-                <h2>My Profile</h2>
-                <p>Manage your personal information and delivery addresses</p>
+                <h2>Account Settings</h2>
+                <p>Manage your identity and delivery preferences</p>
             </header>
 
             <div className="profile-content-layout">
@@ -123,45 +133,72 @@ export default function ProfilePage() {
 
             <style>{`
                 .profile-page-container {
-                    max-width: 900px;
+                    max-width: 1000px;
                     margin: 0 auto;
-                    padding: 40px 20px;
+                    padding: 60px 24px;
                     font-family: 'Inter', sans-serif;
+                    background: #f7f3e9;
+                    min-height: 100vh;
+                }
+                .back-nav-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    background: none;
+                    border: none;
+                    color: #6F8E52;
+                    font-weight: 700;
+                    cursor: pointer;
+                    margin-bottom: 24px;
+                    padding: 8px 0;
+                    font-size: 1rem;
+                    transition: all 0.2s ease;
+                }
+                .back-nav-btn:hover {
+                    color: #5a7442;
+                    transform: translateX(-4px);
                 }
                 .profile-header {
-                    margin-bottom: 32px;
-                    text-align: center;
+                    margin-bottom: 48px;
+                    text-align: left;
+                    border-left: 5px solid #6F8E52;
+                    padding-left: 20px;
                 }
                 .profile-header h2 {
-                    font-size: 2rem;
-                    color: #fff;
+                    font-size: 2.5rem;
+                    font-weight: 800;
+                    color: #4b4a45;
                     margin-bottom: 8px;
+                    letter-spacing: -1px;
                 }
                 .profile-header p {
-                    color: #9ca3af;
+                    color: #8a867a;
+                    font-size: 1.1rem;
                 }
                 .profile-content-layout {
                     display: grid;
                     gap: 32px;
                 }
                 .profile-section-card {
-                    background: rgba(255, 255, 255, 0.05);
-                    backdrop-filter: blur(10px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 16px;
-                    padding: 24px;
+                    background: #e9e4d1;
+                    border: none;
+                    border-radius: 20px;
+                    padding: 32px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
                 }
                 .section-title {
-                    font-size: 1.25rem;
-                    color: #fff;
-                    margin-bottom: 20px;
-                    font-weight: 600;
+                    font-size: 1.5rem;
+                    color: #4b4a45;
+                    margin-top: 0;
+                    margin-bottom: 24px;
+                    font-weight: 800;
+                    letter-spacing: -0.5px;
                 }
                 .section-header-row {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 20px;
+                    margin-bottom: 24px;
                 }
                 .form-grid {
                     display: grid;
@@ -177,18 +214,20 @@ export default function ProfilePage() {
                     grid-column: span 2;
                 }
                 .form-group label {
-                    font-size: 0.875rem;
-                    color: #9ca3af;
-                    font-weight: 500;
+                    font-size: 0.9rem;
+                    color: #8a867a;
+                    font-weight: 600;
+                    margin-bottom: 4px;
                 }
                 .form-group input, .form-group select {
-                    background: rgba(255, 255, 255, 0.1);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 8px;
-                    padding: 10px 14px;
-                    color: #fff;
+                    background: #fdfcf0;
+                    border: 1px solid rgba(0,0,0,0.05);
+                    border-radius: 12px;
+                    padding: 12px 16px;
+                    color: #4b4a45;
                     font-size: 1rem;
                     outline: none;
+                    transition: border-color 0.2s;
                 }
                 .form-group input:focus {
                     border-color: #6F8E52;
@@ -204,35 +243,42 @@ export default function ProfilePage() {
                     cursor: pointer;
                 }
                 .checkbox-group label {
-                    color: #fff;
+                    color: #4b4a45;
+                    font-weight: 600;
                     margin: 0;
                 }
                 .btn-primary {
                     background: #6F8E52;
                     color: #fff;
                     border: none;
-                    border-radius: 8px;
-                    padding: 12px 24px;
-                    font-weight: 600;
+                    border-radius: 12px;
+                    padding: 14px 28px;
+                    font-weight: 700;
+                    font-size: 0.95rem;
                     cursor: pointer;
-                    margin-top: 20px;
-                    width: fit-content;
+                    transition: all 0.2s;
+                    box-shadow: 0 4px 6px rgba(111, 142, 82, 0.2);
+                }
+                .btn-primary:hover {
+                    background: #5a7442;
+                    transform: translateY(-2px);
                 }
                 .btn-outline {
                     background: transparent;
-                    border: 1px solid #6F8E52;
+                    border: 1.5px solid #6F8E52;
                     color: #6F8E52;
-                    border-radius: 8px;
-                    padding: 8px 16px;
-                    font-weight: 500;
+                    border-radius: 10px;
+                    padding: 10px 20px;
+                    font-weight: 700;
                     cursor: pointer;
                 }
                 .btn-secondary {
-                    background: #374151;
-                    color: #fff;
-                    border: none;
-                    border-radius: 8px;
-                    padding: 10px 20px;
+                    background: #fdfcf0;
+                    color: #4b4a45;
+                    border: 1px solid rgba(0,0,0,0.05);
+                    border-radius: 12px;
+                    padding: 14px 28px;
+                    font-weight: 700;
                     cursor: pointer;
                 }
                 .address-grid {
@@ -241,26 +287,32 @@ export default function ProfilePage() {
                     gap: 20px;
                 }
                 .address-card {
-                    background: rgba(255, 255, 255, 0.03);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 12px;
-                    padding: 20px;
+                    background: #fdfcf0;
+                    border: 1px solid rgba(0,0,0,0.05);
+                    border-radius: 16px;
+                    padding: 24px;
                     position: relative;
+                    transition: transform 0.2s;
+                }
+                .address-card:hover {
+                    transform: translateY(-4px);
+                    box-shadow: 0 8px 30px rgba(0,0,0,0.05);
                 }
                 .address-card.default {
                     border-color: #6F8E52;
-                    background: rgba(111, 142, 82, 0.05);
+                    background: #f1f8eb;
                 }
                 .default-badge {
                     position: absolute;
-                    top: 12px;
-                    right: 12px;
+                    top: 16px;
+                    right: 16px;
                     background: #6F8E52;
                     color: #fff;
-                    font-size: 0.65rem;
+                    font-size: 0.7rem;
                     font-weight: 800;
-                    padding: 2px 8px;
-                    border-radius: 4px;
+                    padding: 4px 10px;
+                    border-radius: 6px;
+                    letter-spacing: 0.5px;
                 }
                 .address-content h4 {
                     margin: 0 0 8px;
@@ -313,12 +365,13 @@ export default function ProfilePage() {
                     z-index: 1000;
                 }
                 .modal-content {
-                    background: #1f2937;
-                    border-radius: 16px;
-                    padding: 32px;
-                    width: 100%;
-                    max-width: 450px;
-                    border: 1px solid rgba(255,255,255,0.1);
+                    background: #f7f3e9;
+                    border-radius: 24px;
+                    padding: 40px;
+                    width: 90%;
+                    max-width: 500px;
+                    border: none;
+                    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
                 }
                 .modal-actions {
                     display: flex;

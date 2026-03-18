@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
 
 export default function PersonalInfoForm({ userEmail, onSuccess }) {
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
@@ -134,12 +136,22 @@ export default function PersonalInfoForm({ userEmail, onSuccess }) {
                 )}
             </div>
 
-            {error && <div className="error-message">{error}</div>}
-            {success && <div className="success-message">Profile updated successfully!</div>}
-
-            <button type="submit" className="btn-primary" disabled={loading}>
-                {loading ? 'Saving...' : 'Update Personal Info'}
-            </button>
+            <div className="form-actions" style={{ display: 'flex', gap: '16px', marginTop: '40px' }}>
+                <button type="submit" className="btn-primary" disabled={loading}>
+                    {loading ? 'Saving...' : 'Update Details'}
+                </button>
+                <button 
+                    type="button" 
+                    className="btn-secondary" 
+                    onClick={async () => {
+                        await handleSubmit(onSubmit)();
+                        if (!error) navigate('/');
+                    }}
+                    disabled={loading}
+                >
+                    Save & Back to Store
+                </button>
+            </div>
         </form>
     );
 }
