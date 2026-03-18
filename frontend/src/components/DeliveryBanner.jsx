@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { formatDuration } from "../utils/timeFormat";
 
 /**
  * Returns the current day-of-week (0=Sun … 6=Sat) in UK local time,
@@ -42,9 +43,9 @@ function getNextWednesdayUK() {
 }
 
 /**
- * Calculates time remaining until the next Tuesday 10:00 PM UK time.
+ * Calculates seconds remaining until the next Tuesday 10:00 PM UK time.
  */
-function getTimeUntilCutoff() {
+function getSecondsUntilCutoff() {
   const now = new Date();
   
   // Get current time in London
@@ -78,28 +79,21 @@ function getTimeUntilCutoff() {
   target.setDate(now.getDate() + daysToTarget);
   target.setHours(22, 0, 0, 0);
 
-  // Re-sync target to UK timezone if necessary (handling DST boundaries)
-  // Simply using the difference is usually fine for a 7-day window
   const diff = target.getTime() - now.getTime();
   
-  if (diff <= 0) return { h: 0, m: 0, s: 0, total: 0 };
+  if (diff <= 0) return 0;
 
-  const h = Math.floor(diff / (1000 * 60 * 60));
-  const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const s = Math.floor((diff % (1000 * 60)) / 1000);
-
-  return { h, m, s, total: diff };
+  return Math.floor(diff / 1000);
 }
 
 export default function DeliveryBanner() {
   const [visible, setVisible] = useState(true);
   const [nextWed, setNextWed] = useState(getNextWednesdayUK());
-  const [timeLeft, setTimeLeft] = useState(getTimeUntilCutoff());
+  const [secondsLeft, setSecondsLeft] = useState(getSecondsUntilCutoff());
 
   useEffect(() => {
     const timer = setInterval(() => {
-      const remaining = getTimeUntilCutoff();
-      setTimeLeft(remaining);
+      setSecondsLeft(getSecondsUntilCutoff());
       setNextWed(getNextWednesdayUK());
     }, 1000);
 
@@ -197,12 +191,13 @@ export default function DeliveryBanner() {
             gap: 4px;
             background: #A3E635;
             color: #1e2e24;
-            padding: 2px 10px;
+            padding: 2px 12px;
             border-radius: 6px;
             font-weight: 800;
             font-family: 'JetBrains Mono', 'Courier New', monospace;
-            min-width: 90px;
+            min-width: 100px;
             justify-content: center;
+            font-size: 0.85rem;
         }
         .delivery-banner .banner-date {
           background: rgba(163, 230, 53, 0.2);
@@ -239,7 +234,8 @@ export default function DeliveryBanner() {
           transform: translateY(-50%) scale(1.1) rotate(90deg);
         }
         @media (max-width: 600px) {
-          .delivery-banner { font-size: 0.78rem; padding: 10px 40px 10px 12px; }
+          .delivery-banner { font-size: 0.78rem; padding: 10px 40px 10px 12px; flex-direction: column; height: auto; border-radius: 0 0 12px 12px; }
+          .delivery-banner .banner-text { flex-direction: column; gap: 6px; padding: 12px; border-radius: 12px; }
         }
       `}</style>
 
@@ -251,10 +247,7 @@ export default function DeliveryBanner() {
           </svg>
         </span>
         <span className="banner-text">
-          <span>Order by <strong>Tuesday 10 PM</strong> for Wed Delivery: <strong>{nextWed}</strong></span>
-          <div className="banner-countdown">
-            {String(timeLeft.h).padStart(2, '0')}:{String(timeLeft.m).padStart(2, '0')}:{String(timeLeft.s).padStart(2, '0')}
-          </div>
+          <span>Order within <div className="banner-countdown">{formatDuration(secondsLeft)}</div> for Wed Delivery: <strong>{nextWed}</strong></span>
         </span>
         <button
           className="banner-dismiss"
@@ -268,3 +261,4 @@ export default function DeliveryBanner() {
     </>
   );
 }
+

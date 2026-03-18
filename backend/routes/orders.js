@@ -17,7 +17,7 @@ const router = express.Router();
 
 // Checkout endpoint - Create Customer -> Address -> Order -> Order Items -> Payment
 router.post("/checkout", async (req, res) => {
-  const { name, email, phone, address, items, total, paymentMethod, paymentMethodId, latitude, longitude } = req.body;
+  const { name, email, phone, address, items, total, paymentMethod, paymentMethodId, latitude, longitude, label, city, postcode } = req.body;
 
   console.log("--- New Checkout Request ---");
   console.log("Method:", paymentMethod);
@@ -88,7 +88,9 @@ router.post("/checkout", async (req, res) => {
       .insert([{
         customer_id: customer.customer_id,
         address_line1: address,
-        city: "Unknown",
+        city: city || "Unknown",
+        postcode: postcode || "",
+        label: label || "Other",
         country: "United Kingdom",
         latitude: latitude || 0.0,
         longitude: longitude || 0.0
@@ -127,7 +129,8 @@ router.post("/checkout", async (req, res) => {
       order_id: order.order_id,
       item_id: item.id,
       quantity: item.quantity,
-      price: item.price
+      price: item.price,
+      preparation_type: item.preparationType || 'CLEAN_ONLY'
     }));
 
     const { error: itemsError } = await supabase

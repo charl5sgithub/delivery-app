@@ -34,28 +34,34 @@ function App() {
   // ── Cart helpers ──────────────────────────────────────────────────────────
   const handleAddToCart = (item) => {
     setCart((prev) => {
-      const existing = prev.find((c) => c.id === item.id);
+      const existing = prev.find((c) => 
+        c.id === item.id && c.preparationType === item.preparationType
+      );
       if (existing) {
         return prev.map((c) =>
-          c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c
+          (c.id === item.id && c.preparationType === item.preparationType) 
+            ? { ...c, quantity: c.quantity + 1 } 
+            : c
         );
       }
       return [...prev, { ...item, quantity: 1 }];
     });
   };
 
-  const handleUpdateQuantity = (itemId, delta) => {
+  const handleUpdateQuantity = (itemId, delta, preparationType) => {
     setCart((prev) =>
       prev.map((item) =>
-        item.id === itemId
+        (item.id === itemId && item.preparationType === preparationType)
           ? { ...item, quantity: Math.max(1, item.quantity + delta) }
           : item
       )
     );
   };
 
-  const handleRemoveFromCart = (itemId) => {
-    setCart((prev) => prev.filter((item) => item.id !== itemId));
+  const handleRemoveFromCart = (itemId, preparationType) => {
+    setCart((prev) => prev.filter((item) => 
+      !(item.id === itemId && item.preparationType === preparationType)
+    ));
   };
 
   // Cart passes the grand total (including delivery fee) when proceeding

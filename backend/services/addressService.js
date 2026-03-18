@@ -11,12 +11,13 @@ export const addUserAddress = async (email, addressData) => {
     
     const newAddress = {
         customer_id: user.customer_id,
+        label: addressData.label,
         address_line1: addressData.addressLine,
         city: addressData.city,
         postcode: addressData.postcode,
         delivery_slot: addressData.deliverySlot,
         is_default: addressData.isDefault || false,
-        country: addressData.country || 'Unknown'
+        country: addressData.country || 'United Kingdom'
     };
 
     if (newAddress.is_default) {
@@ -35,11 +36,13 @@ export const updateUserAddress = async (email, addressId, addressData) => {
     }
 
     const updateData = {
+        label: addressData.label,
         address_line1: addressData.addressLine,
         city: addressData.city,
         postcode: addressData.postcode,
         delivery_slot: addressData.deliverySlot,
         is_default: addressData.isDefault,
+        country: addressData.country || 'United Kingdom',
         updated_at: new Date().toISOString()
     };
 

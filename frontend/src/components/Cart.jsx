@@ -34,14 +34,24 @@ export default function Cart({ cart, onCheckout, onUpdateQuantity, onRemoveFromC
                 <img src={item.image} alt={item.name} className="cart-item-image" />
                 <div className="cart-item-details">
                   <h3>{item.name}</h3>
+                  {item.preparationType && (
+                    <p className="cart-item-prep" style={{ 
+                      fontSize: '0.75rem', 
+                      color: '#6F8E52', 
+                      fontWeight: '700',
+                      margin: '2px 0'
+                    }}>
+                      ✨ {item.preparationType.replace('_', ' ')}
+                    </p>
+                  )}
                   <p className="cart-item-price">£{fmtGBP(item.price)}</p>
                 </div>
                 <div className="quantity-controls">
-                  <button className="qty-btn" onClick={() => onUpdateQuantity(item.id, -1)}>-</button>
+                  <button className="qty-btn" onClick={() => onUpdateQuantity(item.id, -1, item.preparationType)}>-</button>
                   <span className="qty-value">{item.quantity}</span>
-                  <button className="qty-btn" onClick={() => onUpdateQuantity(item.id, 1)}>+</button>
+                  <button className="qty-btn" onClick={() => onUpdateQuantity(item.id, 1, item.preparationType)}>+</button>
                 </div>
-                <button className="remove-btn" onClick={() => onRemoveFromCart(item.id)}>
+                <button className="remove-btn" onClick={() => onRemoveFromCart(item.id, item.preparationType)}>
                   🗑️
                 </button>
               </div>

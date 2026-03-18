@@ -15,6 +15,16 @@ export default function AddressList({ addresses, onEdit, onDelete, onSetDefault 
                 <div key={addr.address_id} className={`address-card ${addr.is_default ? 'default' : ''}`}>
                     {addr.is_default && <span className="default-badge">DEFAULT</span>}
                     <div className="address-content">
+                        <div className="address-label" style={{ 
+                            fontSize: '0.75rem', 
+                            fontWeight: '800', 
+                            color: '#6F8E52', 
+                            textTransform: 'uppercase', 
+                            letterSpacing: '0.05em',
+                            marginBottom: '4px'
+                        }}>
+                            📍 {addr.label || 'Address'}
+                        </div>
                         <h4 style={{ fontSize: '1.1rem', marginBottom: '4px', color: '#4b4a45' }}>{addr.address_line1}</h4>
                         <p style={{ color: '#71716a', marginBottom: '12px' }}>{addr.city}, {addr.postcode}</p>
                         <div className="slot-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(111, 142, 82, 0.1)', color: '#6F8E52', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600' }}>

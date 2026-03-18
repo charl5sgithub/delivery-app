@@ -1,13 +1,16 @@
 import React, { useState } from "react";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import CreditCardVisual from "./CreditCardVisual";
+import { useNavigate } from "react-router-dom";
 
-export default function CheckoutForm({ total, cart, onPaymentSuccess, initialProfile, initialAddress }) {
+export default function CheckoutForm({ total, cart, onPaymentSuccess, initialProfile, initialAddress, addresses }) {
   const stripe = useStripe();
   const elements = useElements();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [paymentMethod, setPaymentMethod] = useState('card');
+  const [selectedAddressId, setSelectedAddressId] = useState(initialAddress?.address_id || null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -17,30 +20,41 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
   });
 
   React.useEffect(() => {
-    if (initialProfile || initialAddress) {
+    if (initialProfile) {
       setFormData(prev => ({
         ...prev,
-        name: initialProfile ? `${initialProfile.first_name || ''} ${initialProfile.last_name || ''}`.trim() : prev.name,
-        email: initialProfile?.email || prev.email,
-        phone: initialProfile?.phone || prev.phone,
-        address: initialAddress ? `${initialAddress.address_line1}, ${initialAddress.city}, ${initialAddress.postcode}` : prev.address
+        name: `${initialProfile.first_name || ''} ${initialProfile.last_name || ''}`.trim(),
+        email: initialProfile.email || '',
+        phone: initialProfile.phone || ''
       }));
     }
-  }, [initialProfile, initialAddress]);
+  }, [initialProfile]);
+
+  React.useEffect(() => {
+    if (initialAddress) {
+      const addrString = `${initialAddress.address_line1}, ${initialAddress.city}, ${initialAddress.postcode}`;
+      setFormData(prev => ({ ...prev, address: addrString }));
+      setSelectedAddressId(initialAddress.address_id);
+    }
+  }, [initialAddress]);
+
+  const handleAddressSelect = (addr) => {
+    setSelectedAddressId(addr.address_id);
+    const addrString = `${addr.address_line1}, ${addr.city}, ${addr.postcode}`;
+    setFormData(prev => ({ ...prev, address: addrString }));
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setMessage("");
+    if (e.target.name === 'address') {
+        setSelectedAddressId(null); // Clear selection if manually edited
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submit triggered. Payment Method:", paymentMethod);
-
-    if (paymentMethod === 'card' && (!stripe || !elements)) {
-      console.warn("Stripe or Elements not loaded for card payment.");
-      return;
-    }
+    if (paymentMethod === 'card' && (!stripe || !elements)) return;
 
     setLoading(true);
     setMessage("");
@@ -49,8 +63,6 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
       let paymentMethodId = null;
 
       if (paymentMethod === 'card') {
-        console.log("Creating Stripe Payment Method...");
-        // 1. Create Stripe Payment Method
         const { error: stripeError, paymentMethod: stripePaymentMethod } = await stripe.createPaymentMethod({
           type: 'card',
           card: elements.getElement(CardElement),
@@ -58,56 +70,44 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
             name: formData.name,
             email: formData.email,
             phone: formData.phone,
-            address: {
-              line1: formData.address
-            }
+            address: { line1: formData.address }
           }
         });
 
-        if (stripeError) {
-          console.error("Stripe Error:", stripeError);
-          throw new Error(stripeError.message);
-        }
+        if (stripeError) throw new Error(stripeError.message);
         paymentMethodId = stripePaymentMethod.id;
-        console.log("Stripe Payment Method created:", paymentMethodId);
       }
 
-      // 2. Send Order to Backend
-      const rawApiUrl = import.meta.env.VITE_API_URL;
-      const API_URL = rawApiUrl?.replace(/\/$/, "");
-      console.log("Targeting API URL:", API_URL);
+      const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
+      
+      // Prepare items with preparation_type
+      const itemsToSubmit = cart.map(item => ({
+        ...item,
+        preparation_type: item.preparationType || 'CLEAN_ONLY'
+      }));
 
       const response = await fetch(`${API_URL}/api/orders/checkout`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...formData, // name, email, phone, address
-          items: cart,
+          ...formData,
+          items: itemsToSubmit,
           total: total,
-          paymentMethod: paymentMethod, // 'card' or 'cod'
+          paymentMethod: paymentMethod,
           paymentMethodId: paymentMethodId
         }),
       });
 
-      console.log("API Response Status:", response.status);
       const data = await response.json();
-      console.log("API Response Data:", data);
-
-      if (!response.ok) {
-        throw new Error(data.error || "Order placement failed");
-      }
+      if (!response.ok) throw new Error(data.error || "Order placement failed");
 
       setMessage("✅ Order placed successfully!");
-      // clear form or similar?
       setTimeout(() => {
         onPaymentSuccess(paymentMethod);
         setLoading(false);
       }, 1000);
 
     } catch (error) {
-      console.error("Submission Catch Error:", error);
       setMessage("❌ Payment failed: " + error.message);
       setLoading(false);
     }
@@ -139,120 +139,100 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
       <div className="checkout-form-side">
         <form onSubmit={handleSubmit} className="checkout-form">
           <div className="form-group">
-            <label style={{ color: '#6F8E52', fontWeight: 700 }}>Name</label>
-            <input
-              name="name"
-              type="text"
-              required
-              placeholder="John Doe"
-              className="form-input"
-              style={{ backgroundColor: '#fdfcf0', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)' }}
-              value={formData.name}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="form-group">
-            <label style={{ color: '#6F8E52', fontWeight: 700 }}>Email</label>
+            <label style={{ color: '#6F8E52', fontWeight: 700 }}>Email Address*</label>
             <input
               name="email"
               type="email"
               required
-              placeholder="john@example.com"
-              className="form-input"
+              readOnly={!!initialProfile?.email}
+              className={`form-input ${initialProfile?.email ? 'readonly' : ''}`}
               style={{ backgroundColor: '#fdfcf0', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)' }}
               value={formData.email}
               onChange={handleChange}
             />
           </div>
-          <div className="form-group">
-            <label style={{ color: '#6F8E52', fontWeight: 700 }}>Phone Number</label>
-            <input
-              name="phone"
-              type="tel"
-              required
-              placeholder="+44 7123 456789"
-              className="form-input"
-              style={{ backgroundColor: '#fdfcf0', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)' }}
-              value={formData.phone}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="form-group" style={{ marginBottom: '2rem', textAlign: 'center' }}>
-            <label style={{ display: 'block', marginBottom: '1rem', fontWeight: 600, color: '#4b5563' }}>Payment Method</label>
-            <div style={{
-              display: 'inline-flex',
-              backgroundColor: '#f3f4f6',
-              padding: '4px',
-              borderRadius: '2rem',
-              position: 'relative',
-              cursor: 'pointer',
-              userSelect: 'none',
-              border: '1px solid #e5e7eb',
-              overflow: 'hidden'
-            }}>
-              {/* Sliding Highlight */}
-              <div style={{
-                position: 'absolute',
-                top: '4px',
-                left: paymentMethod === 'card' ? '4px' : 'calc(50% + 2px)',
-                width: 'calc(50% - 6px)',
-                height: 'calc(100% - 8px)',
-                backgroundColor: 'white',
-                borderRadius: '2rem',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                zIndex: 1
-              }}></div>
 
-              <div
-                onClick={() => setPaymentMethod('card')}
-                style={{
-                  padding: '12px 20px',
-                  borderRadius: '2rem',
-                  zIndex: 2,
-                  color: paymentMethod === 'card' ? '#2563eb' : '#6b7280',
-                  fontWeight: paymentMethod === 'card' ? 700 : 500,
-                  transition: 'all 0.3s',
-                  minWidth: window.innerWidth < 480 ? '120px' : '150px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  position: 'relative'
-                }}
-              >
-                <span style={{ fontSize: '1.1rem' }}>💳</span>
-                <span style={{ fontSize: window.innerWidth < 480 ? '0.85rem' : '1rem' }}>Pay by Card</span>
-              </div>
-              <div
-                onClick={() => setPaymentMethod('cod')}
-                style={{
-                  padding: '12px 20px',
-                  borderRadius: '2rem',
-                  zIndex: 2,
-                  color: paymentMethod === 'cod' ? '#059669' : '#6b7280',
-                  fontWeight: paymentMethod === 'cod' ? 700 : 500,
-                  transition: 'all 0.3s',
-                  minWidth: window.innerWidth < 480 ? '120px' : '150px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  position: 'relative'
-                }}
-              >
-                <span style={{ fontSize: '1.1rem' }}>💵</span>
-                <span style={{ fontSize: window.innerWidth < 480 ? '0.85rem' : '1rem' }}>COD</span>
-              </div>
+          <div className="form-grid-checkout" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="form-group">
+                <label style={{ color: '#6F8E52', fontWeight: 700 }}>Full Name*</label>
+                <input
+                name="name"
+                type="text"
+                required
+                className="form-input"
+                style={{ backgroundColor: '#fdfcf0', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)' }}
+                value={formData.name}
+                onChange={handleChange}
+                />
+            </div>
+            <div className="form-group">
+                <label style={{ color: '#6F8E52', fontWeight: 700 }}>Phone Number*</label>
+                <input
+                name="phone"
+                type="tel"
+                required
+                className="form-input"
+                style={{ backgroundColor: '#fdfcf0', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)' }}
+                value={formData.phone}
+                onChange={handleChange}
+                />
             </div>
           </div>
 
-          <div className="form-group" style={{ marginTop: '1rem' }}>
-            <label style={{ color: '#6F8E52', fontWeight: 700 }}>Delivery Address</label>
+          <div className="form-group" style={{ margin: '1.5rem 0' }}>
+            <label style={{ color: '#6F8E52', fontWeight: 700, display: 'block', marginBottom: '12px' }}>
+                Select Delivery Address
+            </label>
+            <div className="address-selector" style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', 
+                gap: '10px',
+                marginBottom: '16px'
+            }}>
+                {addresses?.map(addr => (
+                    <div 
+                        key={addr.address_id}
+                        onClick={() => handleAddressSelect(addr)}
+                        className={`address-tile ${selectedAddressId === addr.address_id ? 'active' : ''}`}
+                        style={{
+                            padding: '12px',
+                            border: `2px solid ${selectedAddressId === addr.address_id ? '#6F8E52' : '#eee'}`,
+                            borderRadius: '12px',
+                            cursor: 'pointer',
+                            backgroundColor: selectedAddressId === addr.address_id ? '#f1f8eb' : '#fff',
+                            transition: 'all 0.2s',
+                            textAlign: 'center'
+                        }}
+                    >
+                        <span style={{ fontSize: '1.2rem', display: 'block', marginBottom: '4px' }}>📍</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#4b4a45', textTransform: 'uppercase' }}>
+                            {addr.label || 'Home'}
+                        </span>
+                    </div>
+                ))}
+                <div 
+                    onClick={() => navigate('/profile')}
+                    className="address-tile add-new"
+                    style={{
+                        padding: '12px',
+                        border: '2px dashed #ddd',
+                        borderRadius: '12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                >
+                    <span style={{ fontSize: '1.2rem' }}>+</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#8a867a' }}>Manage Addresses</span>
+                </div>
+            </div>
+
             <textarea
               name="address"
               required
-              placeholder="123 Main St, City, Postcode"
+              placeholder="Delivery details..."
               className="form-input"
               rows="3"
               style={{ 
@@ -260,14 +240,71 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
                 border: '1.5px solid rgba(111, 142, 82, 0.2)',
                 borderRadius: '12px',
                 padding: '14px',
-                fontSize: '0.95rem'
+                fontSize: '0.9rem',
+                width: '100%',
+                boxSizing: 'border-box'
               }}
               value={formData.address}
               onChange={handleChange}
             ></textarea>
-            <p style={{ fontSize: '0.75rem', color: '#8a867a', marginTop: '4px' }}>
-              ✨ Pre-filled from your profile. Feel free to edit for this delivery.
-            </p>
+          </div>
+
+          <div className="payment-method-section" style={{ margin: '2rem 0', textAlign: 'center' }}>
+            <label style={{ display: 'block', marginBottom: '1rem', fontWeight: 800, color: '#2E4236', fontSize: '1.1rem' }}>
+                Payment Method
+            </label>
+            <div className="payment-toggle-container" style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'center',
+              padding: '4px'
+            }}>
+              <div
+                onClick={() => setPaymentMethod('card')}
+                className={`payment-option ${paymentMethod === 'card' ? 'active' : ''}`}
+                style={{
+                  flex: 1,
+                  maxWidth: '180px',
+                  padding: '16px',
+                  borderRadius: '16px',
+                  border: `2px solid ${paymentMethod === 'card' ? '#6F8E52' : '#eee'}`,
+                  backgroundColor: paymentMethod === 'card' ? '#f1f8eb' : '#fff',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: paymentMethod === 'card' ? '0 4px 12px rgba(111, 142, 82, 0.15)' : 'none'
+                }}
+              >
+                <span style={{ fontSize: '1.8rem' }}>💳</span>
+                <span style={{ fontWeight: 700, color: paymentMethod === 'card' ? '#2E4236' : '#8a867a' }}>Pay by Card</span>
+              </div>
+
+              <div
+                onClick={() => setPaymentMethod('cod')}
+                className={`payment-option ${paymentMethod === 'cod' ? 'active' : ''}`}
+                style={{
+                  flex: 1,
+                  maxWidth: '180px',
+                  padding: '16px',
+                  borderRadius: '16px',
+                  border: `2px solid ${paymentMethod === 'cod' ? '#10b981' : '#eee'}`,
+                  backgroundColor: paymentMethod === 'cod' ? '#ecfdf5' : '#fff',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: paymentMethod === 'cod' ? '0 4px 12px rgba(16, 185, 129, 0.15)' : 'none'
+                }}
+              >
+                <span style={{ fontSize: '1.8rem' }}>💵</span>
+                <span style={{ fontWeight: 700, color: paymentMethod === 'cod' ? '#065f46' : '#8a867a' }}>Pay with Cash</span>
+              </div>
+            </div>
           </div>
 
           {paymentMethod === 'card' && (
@@ -280,36 +317,45 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
                 backgroundColor: '#fff',
                 marginTop: '0.5rem'
               }}>
-                <CardElement
-                  className="card-element"
-                  options={{
-                    style: {
-                      base: {
-                        fontSize: '16px',
-                        color: '#424770',
-                        '::placeholder': { color: '#aab7c4' },
-                      },
-                      invalid: { color: '#9e2146' },
-                    },
-                  }}
-                />
+                <CardElement />
               </div>
-              {!stripe && <p style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '0.5rem' }}>⌛ Loading payment security...</p>}
             </div>
           )}
 
-          <button type="submit" disabled={loading || (paymentMethod === 'card' && !stripe)} className="pay-button" style={{
-            backgroundColor: paymentMethod === 'cod' ? '#10b981' : undefined,
-            opacity: (paymentMethod === 'card' && !stripe) ? 0.7 : 1,
-            cursor: (paymentMethod === 'card' && !stripe) ? 'not-allowed' : 'pointer'
+          <button type="submit" disabled={loading} className="pay-button" style={{
+            backgroundColor: paymentMethod === 'cod' ? '#10b981' : '#6F8E52',
+            color: 'white',
+            padding: '16px',
+            borderRadius: '12px',
+            border: 'none',
+            fontWeight: 800,
+            fontSize: '1.1rem',
+            cursor: 'pointer',
+            width: '100%',
+            marginTop: '1rem'
           }}>
-            {loading ? "Processing..." :
-              (paymentMethod === 'card' && !stripe) ? "Initialising..." :
-                (paymentMethod === 'cod' ? "Submit Order" : `Pay £${total}`)}
+            {loading ? "Processing..." : (paymentMethod === 'cod' ? "Confirm Order" : `Pay £${total}`)}
           </button>
-          {message && <p className="payment-message">{message}</p>}
+          {message && <p className="payment-message" style={{ textAlign: 'center', marginTop: '1rem', color: message.startsWith('✅') ? '#059669' : '#dc2626' }}>{message}</p>}
         </form>
       </div>
+      <style>{`
+        .address-tile:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border-color: #6F8E52 !important;
+        }
+        .payment-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+        }
+        .form-input.readonly {
+            background-color: #f3f4f6 !important;
+            color: #6b7280;
+            cursor: not-allowed;
+        }
+      `}</style>
     </div>
   );
 }
+

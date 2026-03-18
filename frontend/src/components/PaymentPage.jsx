@@ -17,6 +17,7 @@ export default function PaymentPage({ total, cart, onPaymentSuccess }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [profile, setProfile] = React.useState(null);
+  const [addresses, setAddresses] = React.useState([]);
   const [defaultAddress, setDefaultAddress] = React.useState(null);
 
   React.useEffect(() => {
@@ -38,7 +39,8 @@ export default function PaymentPage({ total, cart, onPaymentSuccess }) {
       const addrRes = await axios.get(`${API_URL}/api/address`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      const def = addrRes.data.find(a => a.is_default);
+      setAddresses(addrRes.data);
+      const def = addrRes.data.find(a => a.is_default) || addrRes.data[0];
       setDefaultAddress(def);
     } catch (err) {
       console.error('Error fetching user data for checkout:', err);
@@ -104,6 +106,7 @@ export default function PaymentPage({ total, cart, onPaymentSuccess }) {
             onPaymentSuccess={onPaymentSuccess} 
             initialProfile={profile}
             initialAddress={defaultAddress}
+            addresses={addresses}
           />
         </Elements>
       </div>
