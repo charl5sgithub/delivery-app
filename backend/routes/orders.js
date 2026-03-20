@@ -4,6 +4,7 @@ const { PaymentMethod } = pkg;
 import "../config/gpConfig.js";
 import { supabase } from "../db/supabaseClient.js";
 import { getOrders, getOrderDetails, exportOrders, updateOrderStatus, calculateOrders, getUsersOrders } from "../controllers/orderController.js";
+import { getAccessToken, createHppLink } from "../services/gpService.js";
 import { requireRole } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -18,38 +19,10 @@ router.post("/checkout", async (req, res) => {
   console.log("Token:", paymentMethodId);
 
   const isCOD = paymentMethod === 'cod';
-
-  // ── For card payments: charge via Global Payments FIRST ─
-  let gpTransactionId = null;
-  if (!isCOD) {
-    if (!paymentMethodId) {
-      return res.status(400).json({ error: "paymentMethodId (GP Token) is required for card payments." });
-    }
-    try {
-      console.log("0. Charging card via Global Payments...");
-      
-      const entry = new PaymentMethod();
-      entry.token = paymentMethodId;
-      
-      const transaction = await entry
-        .charge(total)
-        .withCurrency("GBP")
-        .execute();
-
-      if (transaction.responseCode !== "00") {
-        console.error("GP Transaction Failed:", transaction.responseMessage);
-        return res.status(402).json({
-          error: `Payment failed: ${transaction.responseMessage}. Code: ${transaction.responseCode}`
-        });
-      }
-
-      gpTransactionId = transaction.transactionId;
-      console.log("GP charge succeeded. ID:", gpTransactionId);
-    } catch (gpErr) {
-      console.error("Global Payments Error:", gpErr.message);
-      return res.status(402).json({ error: gpErr.message || "Card payment failed via HandePay. Please try again." });
-    }
-  }
+  // ── Checkout Flow ──
+  // 1. Create all DB records first (Order as PENDING)
+  // 2. If COD, return success
+  // 3. If CARD, generate HPP Link and return redirectUrl
 
   try {
     // 1. Create or Find Customer
@@ -97,7 +70,7 @@ router.post("/checkout", async (req, res) => {
         customer_id: customer.customer_id,
         address_id: addr.address_id,
         total_amount: total,
-        order_status: isCOD ? "PENDING" : "PAID"
+        order_status: "PENDING" // Always pending initially
       }])
       .select("order_id")
       .single();
@@ -134,10 +107,9 @@ router.post("/checkout", async (req, res) => {
       .insert([{
         order_id: order.order_id,
         amount: total,
-        status: isCOD ? "pending" : "success",
+        status: "pending",
         payment_method: isCOD ? "cod" : "card",
-        // For card: real Stripe PI id. For COD: a reference prefix.
-        transaction_id: isCOD ? `cod_${Date.now()}` : gpTransactionId
+        transaction_id: isCOD ? `cod_${Date.now()}` : `hpp_${Date.now()}`
       }]);
 
     if (payError) {
@@ -145,8 +117,33 @@ router.post("/checkout", async (req, res) => {
       throw new Error(`Payment Error: ${payError.message}`);
     }
 
-    console.log("Order SUCCESS!");
-    res.json({ success: true, orderId: order.order_id, message: "Order placed successfully!" });
+    console.log("Order SUCCESS! DB Records created.");
+
+    if (isCOD) {
+      return res.json({ success: true, orderId: order.order_id, message: "Order placed successfully!" });
+    } else {
+      // Generate GP Hosted Payment Page Link
+      console.log("Generating GP HPP Link...");
+      try {
+        const token = await getAccessToken();
+        console.log('GP Token:', token);
+        const redirectUrl = await createHppLink(token, {
+          orderId: order.order_id,
+          name: name,
+          email: email,
+          phone: phone,
+          address: address,
+          city: city,
+          postcode: postcode,
+          total: total
+        });
+        console.log("HPP Link generated:", redirectUrl);
+        return res.json({ success: true, orderId: order.order_id, redirectUrl });
+      } catch (err) {
+        console.error("HPP Link Error:", err);
+        return res.status(500).json({ error: "Failed to connect to payment gateway." });
+      }
+    }
 
   } catch (error) {
     console.error("Checkout Catch Block:", error.message);
@@ -156,6 +153,42 @@ router.post("/checkout", async (req, res) => {
 
 // List orders with pagination, sort, search
 router.get("/", getOrders);
+
+// HPP Return Webhook
+router.all("/hpp/return", async (req, res) => {
+  console.log("--- GlobalPayments HPP Return ---");
+  // GP posts the TRN payload either as JSON body or form URL encoded.
+  const payload = req.body || {};
+  console.log("Payload:", payload);
+
+  let redirectTarget = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment-success`;
+
+  if (payload && payload.status === "CAPTURED" || payload.status === "PREAUTHORIZED") {
+    const orderId = payload.reference;
+    console.log(`Payment success for Order ID: ${orderId}`);
+
+    if (orderId) {
+      await supabase.from("orders").update({ order_status: "PAID" }).eq("order_id", orderId);
+      await supabase.from("payments").update({ status: "success", transaction_id: payload.id }).eq("order_id", orderId);
+      redirectTarget += `?order_id=${orderId}`;
+    }
+  } else if (payload && payload.status === "DECLINED") {
+    redirectTarget = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/checkout?error=Payment+Declined`;
+  }
+
+  // Instruct GP HPP iframe to redirect the parent window
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+      <head><title>Processing...</title></head>
+      <body>
+        <script>
+          window.top.location.href = "${redirectTarget}";
+        </script>
+      </body>
+    </html>
+  `);
+});
 
 // Export orders to CSV
 router.get("/export", exportOrders);
