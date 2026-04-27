@@ -9,7 +9,7 @@ A premium, full-stack delivery application designed for artisanal food suppliers
 ### 🛒 Customer Experience
 - **Dynamic Product Discovery**: Browse fresh fish, prime meats, and organic groceries with ease.
 - **Real-time Cart Management**: Add items, update quantities, and see instant price calculations.
-- **Secure Checkout**: Integrated with **Stripe** for bank-grade card payments, with support for **Cash on Delivery (COD)**.
+- **Secure Checkout**: Integrated with **Global Payments** Hosted Payment Page (HPP) for bank-grade card payments, with support for **Cash on Delivery (COD)**.
 - **Responsive Design**: Beautifully optimized for both desktop and mobile users.
 - **Delivery Banners**: Smart notifications for delivery slots and promotional offers.
 
@@ -44,13 +44,13 @@ A premium, full-stack delivery application designed for artisanal food suppliers
 - [Vite](https://vitejs.dev/) - Build Tool
 - [Firebase Auth](https://firebase.google.com/docs/auth) - User Authentication
 - [Leaflet](https://leafletjs.com/) - Interactive Maps
-- [Stripe Elements](https://stripe.com/docs/stripe-js/react) - Payment Integration
+- [Global Payments JS SDK](https://developer.globalpay.com/) - Payment Integration
 
 **Backend:**
 - [Node.js](https://nodejs.org/) & [Express](https://expressjs.com/) - Application Server
 - [Supabase](https://supabase.com/) - PostgreSQL Database & Client
 - [Firebase Admin](https://firebase.google.com/docs/admin) - Secure Backend Operations
-- [Stripe SDK](https://stripe.com/docs/api) - Server-side Payment Processing
+- [Global Payments UCP API](https://developer.globalpay.com/) - Server-side Payment Processing
 
 ---
 
@@ -60,7 +60,8 @@ A premium, full-stack delivery application designed for artisanal food suppliers
 - Node.js (v18+)
 - Firebase Account
 - Supabase Account
-- Stripe API Keys
+- Global Payments Sandbox Credentials (APP_ID & APP_KEY)
+- [ngrok](https://ngrok.com/) (for local GP sandbox testing)
 
 ### Installation
 
@@ -84,6 +85,14 @@ A premium, full-stack delivery application designed for artisanal food suppliers
    npm install
    # Create a .env file based on .env.example
    npm run dev
+   ```
+
+4. **Ngrok Tunnel (required for GP sandbox card payments):**
+   ```bash
+   # In a new terminal:
+   npx ngrok http 5000
+   # Copy the https://xxxx.ngrok-free.app URL
+   # Set WEBHOOK_URL=https://xxxx.ngrok-free.app in backend/.env
    ```
 
 ### 📦 Seeding Data

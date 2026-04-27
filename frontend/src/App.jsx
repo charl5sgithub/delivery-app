@@ -15,6 +15,8 @@ import ConfirmationDialog from "./components/ConfirmationDialog";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import DeliveryBanner from "./components/DeliveryBanner";
 import ProfilePage from "./pages/ProfilePage";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentFailed from "./pages/PaymentFailed";
 
 import "./app.css";
 
@@ -224,6 +226,10 @@ function App() {
           <Route path="delivery" element={<AdminDeliveryMap />} />
           <Route index element={<Navigate to="orders" />} />
         </Route>
+
+        {/* ── Payment Result Pages ────────────────────────────────────── */}
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment-failed" element={<PaymentFailed />} />
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

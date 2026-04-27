@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "node server.js",
+    "dev:tunnel": "npx -y ngrok http 5000",
     "start": "node server.js",
     "seed": "node scripts/seedFishItems.js"
   },
@@ -12,6 +13,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
+    "globalpayments-api": "^3.10.12",
     "joi": "^18.0.2",
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.3",
