@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "node server.js",
+    "dev:tunnel": "npx -y ngrok http 5000",
     "start": "node server.js",
     "seed": "node scripts/seedFishItems.js"
   },

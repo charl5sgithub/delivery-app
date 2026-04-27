@@ -4,10 +4,21 @@ const { PaymentMethod } = pkg;
 import "../config/gpConfig.js";
 import { supabase } from "../db/supabaseClient.js";
 import { getOrders, getOrderDetails, exportOrders, updateOrderStatus, calculateOrders, getUsersOrders } from "../controllers/orderController.js";
-import { getAccessToken, createHppLink } from "../services/gpService.js";
+import { getAccessToken, processPayment } from "../services/gpService.js";
 import { requireRole } from "../middleware/auth.js";
 
 const router = express.Router();
+
+// Endpoint to generate single-use access token for frontend GP SDK
+router.get("/access-token", async (req, res) => {
+  try {
+    const token = await getAccessToken(["PMT_POST_Create_Single"]);
+    res.json({ token });
+  } catch (err) {
+    console.error("Access Token error:", err);
+    res.status(500).json({ error: "Failed to generate payment token" });
+  }
+});
 
 // Checkout endpoint - Create Customer -> Address -> Order -> Order Items -> Payment
 router.post("/checkout", async (req, res) => {
@@ -39,28 +50,49 @@ router.post("/checkout", async (req, res) => {
     }
     console.log("Customer found/created ID:", customer.customer_id);
 
-    // 2. Create Address
-    console.log("2. Inserting Address...");
-    const { data: addr, error: addrError } = await supabase
+    // 2. Create or Find Address
+    console.log(`2. Finding or Creating Address for ${name} (Label: ${label || 'Other'})...`);
+    const { data: existingAddr, error: findAddrError } = await supabase
       .from("addresses")
-      .insert([{
-        customer_id: customer.customer_id,
-        address_line1: address,
-        city: city || "Unknown",
-        postcode: postcode || "",
-        label: label || "Other",
-        country: "United Kingdom",
-        latitude: latitude || 0.0,
-        longitude: longitude || 0.0
-      }])
       .select("address_id")
-      .single();
+      .eq("customer_id", customer.customer_id)
+      .eq("label", label || "Other")
+      .limit(1)
+      .maybeSingle();
 
-    if (addrError) {
-      console.error("Address Error!", addrError);
-      throw new Error(`Address Error: ${addrError.message}`);
+    if (findAddrError) {
+      console.error("Address Search Error!", findAddrError);
+      throw new Error(`Address Search Error: ${findAddrError.message}`);
     }
-    console.log("Address ID:", addr.address_id);
+
+    let addressId;
+    if (existingAddr) {
+      console.log("Existing address found ID:", existingAddr.address_id);
+      addressId = existingAddr.address_id;
+    } else {
+      console.log("No existing address found, creating new one...");
+      const { data: newAddr, error: addrError } = await supabase
+        .from("addresses")
+        .insert([{
+          customer_id: customer.customer_id,
+          address_line1: address,
+          city: city || "Unknown",
+          postcode: postcode || "",
+          label: label || "Other",
+          country: "United Kingdom",
+          latitude: latitude || 0.0,
+          longitude: longitude || 0.0
+        }])
+        .select("address_id")
+        .single();
+
+      if (addrError) {
+        console.error("Address Creation Error!", addrError);
+        throw new Error(`Address Creation Error: ${addrError.message}`);
+      }
+      addressId = newAddr.address_id;
+    }
+    console.log("Address ID to use:", addressId);
 
     // 3. Create Order
     console.log("3. Creating Order...");
@@ -68,7 +100,7 @@ router.post("/checkout", async (req, res) => {
       .from("orders")
       .insert([{
         customer_id: customer.customer_id,
-        address_id: addr.address_id,
+        address_id: addressId,
         total_amount: total,
         order_status: "PENDING" // Always pending initially
       }])
@@ -122,26 +154,31 @@ router.post("/checkout", async (req, res) => {
     if (isCOD) {
       return res.json({ success: true, orderId: order.order_id, message: "Order placed successfully!" });
     } else {
-      // Generate GP Hosted Payment Page Link
-      console.log("Generating GP HPP Link...");
+      // Card payment — process directly with the token
+      console.log("Processing GP payment for order:", order.order_id);
       try {
         const token = await getAccessToken();
-        console.log('GP Token:', token);
-        const redirectUrl = await createHppLink(token, {
+        const paymentResult = await processPayment(token, paymentMethodId, {
           orderId: order.order_id,
-          name: name,
-          email: email,
-          phone: phone,
-          address: address,
-          city: city,
-          postcode: postcode,
           total: total
         });
-        console.log("HPP Link generated:", redirectUrl);
-        return res.json({ success: true, orderId: order.order_id, redirectUrl });
+
+        console.log("Payment successful:", paymentResult.id);
+        
+        // Update DB records
+        await supabase.from("orders").update({ order_status: "PAID" }).eq("order_id", order.order_id);
+        await supabase.from("payments").update({ status: "success", transaction_id: paymentResult.id }).eq("order_id", order.order_id);
+
+        return res.json({
+          success: true,
+          orderId: order.order_id,
+          message: "Payment processed successfully!"
+        });
       } catch (err) {
-        console.error("HPP Link Error:", err);
-        return res.status(500).json({ error: "Failed to connect to payment gateway." });
+        console.error("Payment Processing Error:", err);
+        // Mark payment as failed in DB
+        await supabase.from("payments").update({ status: "failed" }).eq("order_id", order.order_id);
+        return res.status(500).json({ error: err.message || "Failed to process payment." });
       }
     }
 
@@ -163,7 +200,7 @@ router.all("/hpp/return", async (req, res) => {
 
   let redirectTarget = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment-success`;
 
-  if (payload && payload.status === "CAPTURED" || payload.status === "PREAUTHORIZED") {
+  if (payload && (payload.status === "CAPTURED" || payload.status === "PREAUTHORIZED")) {
     const orderId = payload.reference;
     console.log(`Payment success for Order ID: ${orderId}`);
 
@@ -173,7 +210,7 @@ router.all("/hpp/return", async (req, res) => {
       redirectTarget += `?order_id=${orderId}`;
     }
   } else if (payload && payload.status === "DECLINED") {
-    redirectTarget = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/checkout?error=Payment+Declined`;
+    redirectTarget = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment-failed`;
   }
 
   // Instruct GP HPP iframe to redirect the parent window

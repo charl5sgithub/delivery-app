@@ -52,5 +52,12 @@ export default app;
 
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log('');
+    console.log('📡 For GP sandbox testing, run in a separate terminal:');
+    console.log(`   npx ngrok http ${PORT}`);
+    console.log('   Then set WEBHOOK_URL=https://xxxx.ngrok-free.app in your .env');
+    console.log('');
+  });
 }

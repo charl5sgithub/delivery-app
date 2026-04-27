@@ -2,7 +2,6 @@ import React from "react";
 import CheckoutForm from "./CheckoutForm";
 // import "./PaymentPage.css";
 
-
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
@@ -15,14 +14,18 @@ export default function PaymentPage({ total, cart, onPaymentSuccess }) {
   const [profile, setProfile] = React.useState(null);
   const [addresses, setAddresses] = React.useState([]);
   const [defaultAddress, setDefaultAddress] = React.useState(null);
+  const [fetchedOnce, setFetchedOnce] = React.useState(false);
 
+  // Use user?.email (a stable primitive) instead of the user object to avoid
+  // infinite re-fetch loops caused by context re-creating the user object reference.
   React.useEffect(() => {
-    if (user) {
+    if (user?.email && !fetchedOnce) {
       fetchUserData();
     }
-  }, [user]);
+  }, [user?.email]);
 
   const fetchUserData = async () => {
+    setFetchedOnce(true); // Guard against re-fetching
     try {
       const token = localStorage.getItem('auth_token');
       // Fetch profile
@@ -53,7 +56,7 @@ export default function PaymentPage({ total, cart, onPaymentSuccess }) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: window.innerWidth < 640 ? '1rem' : '2rem',
+      padding: 'clamp(1rem, 3vw, 2rem)',
       boxSizing: 'border-box',
       position: 'relative'
     }}>
@@ -61,8 +64,8 @@ export default function PaymentPage({ total, cart, onPaymentSuccess }) {
         onClick={() => navigate('/cart')}
         style={{
           position: 'absolute',
-          top: window.innerWidth < 640 ? '10px' : '20px',
-          left: window.innerWidth < 640 ? '10px' : '20px',
+          top: '20px',
+          left: '20px',
           padding: '8px 16px',
           backgroundColor: '#4b5563',
           color: 'white',
@@ -78,21 +81,21 @@ export default function PaymentPage({ total, cart, onPaymentSuccess }) {
       </button>
       <div className="payment-page-card" style={{
         backgroundColor: 'white',
-        padding: window.innerWidth < 640 ? '1.5rem 1rem' : '2rem',
+        padding: 'clamp(1.5rem, 4vw, 2rem)',
         borderRadius: '1rem',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
         maxWidth: '1000px',
         width: '100%',
         margin: '0 auto',
-        marginTop: window.innerWidth < 640 ? '50px' : '0'
+        marginTop: '50px'
       }}>
         <h2 style={{
           textAlign: 'center',
           marginBottom: '1.5rem',
-          fontSize: window.innerWidth < 640 ? '1.5rem' : '2rem',
+          fontSize: 'clamp(1.5rem, 4vw, 2rem)',
           color: '#1f2937'
         }}>💳 Secure Payment</h2>
-        <p style={{ marginBottom: '20px', textAlign: 'center', fontSize: window.innerWidth < 640 ? '1rem' : '1.2rem' }}>
+        <p style={{ marginBottom: '20px', textAlign: 'center', fontSize: 'clamp(1rem, 2.5vw, 1.2rem)' }}>
           Total Amount: <strong style={{ color: '#10b981' }}>£{total}</strong>
         </p>
         <CheckoutForm 
