@@ -41,13 +41,15 @@ const CreditCardVisual = ({ name }) => {
                         <div className="card-chip"></div>
                         <div className="card-logo">VISA</div>
                         <div className="card-number">•••• •••• •••• ••••</div>
-                        <div className="card-holder">
-                            <span className="card-label">Card Holder</span>
-                            <span className="card-name">{name || "Card Holder"}</span>
-                        </div>
-                        <div className="card-expiry">
-                            <span className="card-label">Expires</span>
-                            <span className="card-date">MM/YY</span>
+                        <div className="card-info" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%' }}>
+                            <div className="card-holder">
+                                <span className="card-label">Card Holder</span>
+                                <span className="card-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '150px', display: 'block' }}>{name || "Card Holder"}</span>
+                            </div>
+                            <div className="card-expiry">
+                                <span className="card-label">Expires</span>
+                                <span className="card-date">MM/YY</span>
+                            </div>
                         </div>
                     </div>
                 </div>

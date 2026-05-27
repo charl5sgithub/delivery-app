@@ -6,6 +6,7 @@ const profileUpdateSchema = Joi.object({
     lastName: Joi.string().required(),
     phone: Joi.string().pattern(/^[0-9+]+$/).required(),
     whatsappNumber: Joi.string().pattern(/^[0-9+]+$/).allow('', null),
+    email: Joi.string().email().optional(), // read-only on frontend; ignored in DB update (uses JWT email)
 });
 
 export const getProfile = async (req, res) => {

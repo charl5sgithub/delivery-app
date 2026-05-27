@@ -53,8 +53,10 @@ export default function PersonalInfoForm({ userEmail, onSuccess }) {
             setSuccess(true);
             if (onSuccess) onSuccess();
             setTimeout(() => setSuccess(false), 3000);
+            return true; // signal success to callers
         } catch (err) {
             setError(err.response?.data?.error || 'Failed to update profile');
+            return false; // signal failure to callers
         } finally {
             setLoading(false);
         }
@@ -144,14 +146,29 @@ export default function PersonalInfoForm({ userEmail, onSuccess }) {
                     type="button" 
                     className="btn-secondary" 
                     onClick={async () => {
-                        await handleSubmit(onSubmit)();
-                        if (!error) navigate('/');
+                        // handleSubmit validates first, then calls onSubmit which returns true/false
+                        let saved = false;
+                        await handleSubmit(async (data) => {
+                            saved = await onSubmit(data);
+                        })();
+                        if (saved) navigate('/');
                     }}
                     disabled={loading}
                 >
                     Save & Back to Store
                 </button>
             </div>
+
+            {success && (
+                <p style={{ marginTop: '16px', color: '#059669', fontWeight: 600 }}>
+                    ✅ Profile updated successfully!
+                </p>
+            )}
+            {error && (
+                <p style={{ marginTop: '16px', color: '#dc2626', fontWeight: 600 }}>
+                    ❌ {error}
+                </p>
+            )}
         </form>
     );
 }
