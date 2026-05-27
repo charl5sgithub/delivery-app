@@ -185,7 +185,7 @@ export default function ProfilePage({ onAddToCart }) {
                         </div>
                     ) : (
                         <div className="orders-list">
-                            {orders.map(order => (
+                            {orders.slice(0, 3).map(order => (
                                 <div key={order.order_id} className="order-history-card">
                                     <div className="order-main-info">
                                         <div className="order-meta">

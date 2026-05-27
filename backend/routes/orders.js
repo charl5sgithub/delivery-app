@@ -1,24 +1,11 @@
 import express from "express";
-import pkg from "globalpayments-api";
-const { PaymentMethod } = pkg;
-import "../config/gpConfig.js";
 import { supabase } from "../db/supabaseClient.js";
 import { getOrders, getOrderDetails, exportOrders, updateOrderStatus, calculateOrders, getUsersOrders } from "../controllers/orderController.js";
-import { getAccessToken, processPayment } from "../services/gpService.js";
 import { requireRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Endpoint to generate single-use access token for frontend GP SDK
-router.get("/access-token", async (req, res) => {
-  try {
-    const token = await getAccessToken(["PMT_POST_Create_Single"]);
-    res.json({ token });
-  } catch (err) {
-    console.error("Access Token error:", err);
-    res.status(500).json({ error: "Failed to generate payment token" });
-  }
-});
+
 
 // Checkout endpoint - Create Customer -> Address -> Order -> Order Items -> Payment
 router.post("/checkout", async (req, res) => {
@@ -151,36 +138,8 @@ router.post("/checkout", async (req, res) => {
 
     console.log("Order SUCCESS! DB Records created.");
 
-    if (isCOD) {
-      return res.json({ success: true, orderId: order.order_id, message: "Order placed successfully!" });
-    } else {
-      // Card payment — process directly with the token
-      console.log("Processing GP payment for order:", order.order_id);
-      try {
-        const token = await getAccessToken();
-        const paymentResult = await processPayment(token, paymentMethodId, {
-          orderId: order.order_id,
-          total: total
-        });
-
-        console.log("Payment successful:", paymentResult.id);
-        
-        // Update DB records
-        await supabase.from("orders").update({ order_status: "PAID" }).eq("order_id", order.order_id);
-        await supabase.from("payments").update({ status: "success", transaction_id: paymentResult.id }).eq("order_id", order.order_id);
-
-        return res.json({
-          success: true,
-          orderId: order.order_id,
-          message: "Payment processed successfully!"
-        });
-      } catch (err) {
-        console.error("Payment Processing Error:", err);
-        // Mark payment as failed in DB
-        await supabase.from("payments").update({ status: "failed" }).eq("order_id", order.order_id);
-        return res.status(500).json({ error: err.message || "Failed to process payment." });
-      }
-    }
+    // Return success for both COD and any future payment methods
+    return res.json({ success: true, orderId: order.order_id, message: "Order placed successfully!" });
 
   } catch (error) {
     console.error("Checkout Catch Block:", error.message);
@@ -191,41 +150,7 @@ router.post("/checkout", async (req, res) => {
 // List orders with pagination, sort, search
 router.get("/", getOrders);
 
-// HPP Return Webhook
-router.all("/hpp/return", async (req, res) => {
-  console.log("--- GlobalPayments HPP Return ---");
-  // GP posts the TRN payload either as JSON body or form URL encoded.
-  const payload = req.body || {};
-  console.log("Payload:", payload);
 
-  let redirectTarget = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment-success`;
-
-  if (payload && (payload.status === "CAPTURED" || payload.status === "PREAUTHORIZED")) {
-    const orderId = payload.reference;
-    console.log(`Payment success for Order ID: ${orderId}`);
-
-    if (orderId) {
-      await supabase.from("orders").update({ order_status: "PAID" }).eq("order_id", orderId);
-      await supabase.from("payments").update({ status: "success", transaction_id: payload.id }).eq("order_id", orderId);
-      redirectTarget += `?order_id=${orderId}`;
-    }
-  } else if (payload && payload.status === "DECLINED") {
-    redirectTarget = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment-failed`;
-  }
-
-  // Instruct GP HPP iframe to redirect the parent window
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-      <head><title>Processing...</title></head>
-      <body>
-        <script>
-          window.top.location.href = "${redirectTarget}";
-        </script>
-      </body>
-    </html>
-  `);
-});
 
 // Export orders to CSV
 router.get("/export", exportOrders);

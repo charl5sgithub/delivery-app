@@ -1,13 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import CreditCardVisual from "./CreditCardVisual";
 import { useNavigate } from "react-router-dom";
 
 export default function CheckoutForm({ total, cart, onPaymentSuccess, initialProfile, initialAddress, addresses }) {
   const navigate = useNavigate();
-  const gpFormRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [paymentMethod, setPaymentMethod] = useState('cod');
   const [selectedAddressId, setSelectedAddressId] = useState(initialAddress?.address_id || null);
 
   const [formData, setFormData] = useState({
@@ -50,122 +49,14 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
     }
   };
 
-  // Initialize Global Payments Hosted Fields when 'card' is selected
-  useEffect(() => {
-    if (paymentMethod !== 'card') return;
-
-    let cancelled = false;
-
-    const initGP = async () => {
-      // Move this OUTSIDE and BEFORE the try block
-      if (!window.GlobalPayments) {
-        setMessage("Payment gateway failed to load. Please refresh.");
-        return;
-      }
-
-      const GP = window.GlobalPayments; // ← declare here, at the top
-
-      try {
-        const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
-        const tokenRes = await fetch(`${API_URL}/api/orders/access-token`);
-        const tokenData = await tokenRes.json();
-        if (!tokenData.token) throw new Error("Could not retrieve access token.");
-
-        if (cancelled) return;
-
-        GP.configure({
-          env: "sandbox",
-          accessToken: tokenData.token,
-          apiVersion: "2021-03-22",
-          apms: {
-            clickToPay: { enabled: false }
-          }
-        });
-
-        const styleConfig = {
-          "input": {
-            "font-size": "16px",
-            "font-family": "system-ui, -apple-system, sans-serif",
-            "color": "#374151"
-          },
-          "input::placeholder": {
-            "color": "#9ca3af"
-          },
-          "button": {
-            "background-color": "#6F8E52",
-            "color": "white",
-            "border": "none",
-            "border-radius": "12px",
-            "font-weight": "800",
-            "font-size": "1.1rem",
-            "padding": "16px",
-            "cursor": "pointer",
-            "width": "100%",
-            "margin-top": "1rem"
-          }
-        };
-
-        const formInstance = GP.ui.form({
-          fields: {
-            "card-number": { target: "#card-number", placeholder: "•••• •••• •••• ••••" },
-            "card-expiration": { target: "#card-expiration", placeholder: "MM / YYYY" },
-            "card-cvv": { target: "#card-cvv", placeholder: "•••" },
-            "submit": { value: `Pay £${total}`, target: "#gp-submit-button" }
-          },
-          styles: styleConfig
-        });
-
-        gpFormRef.current = formInstance;
-
-        formInstance.on("token-success", (resp) => {
-          if (!cancelled) submitOrderWithToken(resp.paymentReference);
-        });
-
-        formInstance.on("token-error", (resp) => {
-          console.error("Global Payments Tokenization Error:", resp);
-          if (!cancelled) {
-            let errorText = "Unknown error";
-            if (resp.reasons && resp.reasons.length > 0) {
-                errorText = resp.reasons[0].message;
-            } else if (resp.error && resp.error.message) {
-                errorText = resp.error.message;
-            }
-            setMessage("Failed to process card: " + errorText);
-            setLoading(false);
-          }
-        });
-
-      } catch (err) {
-        if (!cancelled) setMessage("Failed to initialize payment gateway. " + err.message);
-      }
-    };
-
-    initGP();
-
-    return () => {
-      cancelled = true;
-      gpFormRef.current = null;
-      // Wipe the iframe containers on unmount
-      ['#card-number', '#card-expiration', '#card-cvv', '#gp-submit-button'].forEach(sel => {
-        const el = document.querySelector(sel);
-        if (el) el.innerHTML = '';
-      });
-    };
-  }, [paymentMethod, total]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
-
-    if (paymentMethod === 'cod') {
-      submitOrderWithToken(null);
-    }
-    // Note: If paymentMethod === 'card', the GP iframe intercepts the click on its injected button
-    // and fires the 'token-success' event, routing through submitOrderWithToken asynchronously.
+    await submitOrder();
   };
 
-  const submitOrderWithToken = async (paymentMethodId) => {
+  const submitOrder = async () => {
     try {
       const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
 
@@ -194,7 +85,7 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
           items: itemsToSubmit,
           total: total,
           paymentMethod: paymentMethod,
-          paymentMethodId: paymentMethodId,
+          paymentMethodId: null,
           label: "Other"
         }),
       });
@@ -205,7 +96,6 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
         throw new Error(data.error || "Checkout failed");
       }
 
-      // Show success via callback for both card and COD
       setMessage("✅ Order placed successfully!");
       setTimeout(() => {
         onPaymentSuccess(paymentMethod);
@@ -221,24 +111,20 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
   return (
     <div className="checkout-layout">
       <div className="checkout-visual-side">
-        {paymentMethod === 'card' ? (
-          <CreditCardVisual name={formData.name || "Card Holder"} />
-        ) : (
-          <div className="cod-visual" style={{
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#f3f4f6',
-            borderRadius: '1rem',
-            color: '#4b5563'
-          }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>💵</div>
-            <h3>Cash on Delivery</h3>
-            <p>Pay conveniently at your doorstep.</p>
-          </div>
-        )}
+        <div className="cod-visual" style={{
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#f3f4f6',
+          borderRadius: '1rem',
+          color: '#4b5563'
+        }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>💵</div>
+          <h3>Cash on Delivery</h3>
+          <p>Pay conveniently at your doorstep.</p>
+        </div>
       </div>
 
       <div className="checkout-form-side">
@@ -364,29 +250,40 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
               justifyContent: 'center',
               padding: '4px'
             }}>
+              {/* Pay by Card — temporarily disabled */}
               <div
-                onClick={() => setPaymentMethod('card')}
-                className={`payment-option ${paymentMethod === 'card' ? 'active' : ''}`}
+                className="payment-option disabled"
+                title="Card payments are temporarily unavailable"
                 style={{
                   flex: 1,
                   maxWidth: '180px',
                   padding: '16px',
                   borderRadius: '16px',
-                  border: `2px solid ${paymentMethod === 'card' ? '#6F8E52' : '#eee'}`,
-                  backgroundColor: paymentMethod === 'card' ? '#f1f8eb' : '#fff',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
+                  border: '2px solid #e5e7eb',
+                  backgroundColor: '#f9fafb',
+                  cursor: 'not-allowed',
+                  opacity: 0.5,
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: '8px',
-                  boxShadow: paymentMethod === 'card' ? '0 4px 12px rgba(111, 142, 82, 0.15)' : 'none'
+                  position: 'relative'
                 }}
               >
                 <span style={{ fontSize: '1.8rem' }}>💳</span>
-                <span style={{ fontWeight: 700, color: paymentMethod === 'card' ? '#2E4236' : '#8a867a' }}>Pay by Card</span>
+                <span style={{ fontWeight: 700, color: '#9ca3af' }}>Pay by Card</span>
+                <span style={{
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  color: '#ef4444',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Unavailable
+                </span>
               </div>
 
+              {/* Cash on Delivery */}
               <div
                 onClick={() => setPaymentMethod('cod')}
                 className={`payment-option ${paymentMethod === 'cod' ? 'active' : ''}`}
@@ -412,60 +309,20 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
             </div>
           </div>
 
-          {paymentMethod === 'card' && (
-            <div className="handepay-container" style={{
-              marginTop: '1.5rem',
-              padding: '24px',
-              backgroundColor: '#fdfcf0',
-              borderRadius: '16px',
-              border: '1.5px solid rgba(111, 142, 82, 0.2)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-              boxSizing: 'border-box',
-              width: '100%',
-              textAlign: 'left'
-            }}>
-              <label style={{ color: '#2E4236', fontWeight: 800, display: 'block', marginBottom: '16px', textAlign: 'center' }}>Secure Payment Processing</label>
-
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ color: '#6F8E52', fontWeight: 700, fontSize: '0.9rem', marginBottom: '8px', display: 'block' }}>Card Number</label>
-                <div id="card-number" style={{ height: '48px', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px', padding: '12px' }}></div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ color: '#6F8E52', fontWeight: 700, fontSize: '0.9rem', marginBottom: '8px', display: 'block' }}>Expiry Date</label>
-                  <div id="card-expiration" style={{ height: '48px', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px', padding: '12px' }}></div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ color: '#6F8E52', fontWeight: 700, fontSize: '0.9rem', marginBottom: '8px', display: 'block' }}>CVV</label>
-                  <div id="card-cvv" style={{ height: '48px', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px', padding: '12px' }}></div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {paymentMethod === 'card' ? (
-            <div id="gp-submit-button" style={{
-              width: '100%',
-              height: '70px', /* Allow space for padding + margin inside iframe */
-              marginTop: '1rem'
-            }}></div>
-          ) : (
-            <button type="submit" disabled={loading} className="pay-button" style={{
-              backgroundColor: '#10b981',
-              color: 'white',
-              padding: '16px',
-              borderRadius: '12px',
-              border: 'none',
-              fontWeight: 800,
-              fontSize: '1.1rem',
-              cursor: 'pointer',
-              width: '100%',
-              marginTop: '1rem'
-            }}>
-              {loading ? "Processing..." : "Confirm Order"}
-            </button>
-          )}
+          <button type="submit" disabled={loading} className="pay-button" style={{
+            backgroundColor: '#10b981',
+            color: 'white',
+            padding: '16px',
+            borderRadius: '12px',
+            border: 'none',
+            fontWeight: 800,
+            fontSize: '1.1rem',
+            cursor: 'pointer',
+            width: '100%',
+            marginTop: '1rem'
+          }}>
+            {loading ? "Processing..." : "Confirm Order"}
+          </button>
 
           {message && <p className="payment-message" style={{ textAlign: 'center', marginTop: '1rem', color: message.startsWith('✅') ? '#059669' : '#dc2626' }}>{message}</p>}
         </form>
@@ -476,7 +333,7 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             border-color: #6F8E52 !important;
         }
-        .payment-option:hover {
+        .payment-option:not(.disabled):hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(0,0,0,0.08);
         }
@@ -489,4 +346,3 @@ export default function CheckoutForm({ total, cart, onPaymentSuccess, initialPro
     </div>
   );
 }
-

@@ -144,11 +144,9 @@
 }
 
 .card-holder {
-  float: left;
 }
 
 .card-expiry {
-  float: right;
   text-align: right;
 }
 

@@ -9,6 +9,7 @@ export const updateUserProfile = async (email, profileData) => {
     const updateData = {
         first_name: profileData.firstName,
         last_name: profileData.lastName,
+        name: `${profileData.firstName} ${profileData.lastName}`.trim(),
         phone: profileData.phone,
         whatsapp_number: profileData.whatsappNumber,
         updated_at: new Date().toISOString()
